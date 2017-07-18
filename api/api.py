@@ -3,6 +3,7 @@ from flask import jsonify
 from bson import json_util
 import json
 from pymongo import MongoClient
+from flask import request
 import os
 
 application = Flask(__name__)
@@ -28,6 +29,13 @@ def transaction_history(address):
                      "receiver": reciever,
                      "sender": sender}, indent=4, default=json_util.default))
     return jsonify(out)
+
+@application.route("/sync_block/", methods=['POST'])
+def sync_block():
+    data = request.get_json()
+    block = data["block"]
+    print("got block {}".format(block))
+    return jsonify({"success":True})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
