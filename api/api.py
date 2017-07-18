@@ -5,19 +5,18 @@ import json
 from pymongo import MongoClient
 from flask import request
 import os
+from .db import db, redis_db
+from rq import Queue
+from .blockchain import storeBlockInDB
 
 application = Flask(__name__)
 
-MONGOUSER = os.environ.get('MONGOUSER')
-MONGOPASS = os.environ.get('MONGOPASS')
-MONGOURL = os.environ.get('MONGOURL')
-MONGOAPP = os.environ.get('MONGOAPP')
-MONGOURL = "mongodb://{}:{}@{}/{}".format(MONGOUSER, MONGOPASS, MONGOURL, MONGOAPP)
+q = Queue(connection=redis_db)
 
-client = MongoClient(MONGOURL)
-db = client[MONGOAPP]
 transaction_db = db['transactions']
+blockchain_db = db['blockchain']
 
+# return all transactions associated with an address (sending to or sent from)
 @application.route("/transaction_history/<address>")
 def transaction_history(address):
     reciever = [t for t in transaction_db.find({"type":"ContractTransaction",
@@ -30,12 +29,11 @@ def transaction_history(address):
                      "sender": sender}, indent=4, default=json_util.default))
     return jsonify(out)
 
-@application.route("/sync_block/", methods=['POST'])
-def sync_block():
-    data = request.get_json()
-    block = data["block"]
-    print("got block {}".format(block))
-    return jsonify({"success":True})
+@application.route("/block_height")
+def block_height():
+    height = [x for x in blockchain_db.find().sort("index", -1).limit(1)][0]["index"]
+    return jsonify({"block_height": height})
+
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')

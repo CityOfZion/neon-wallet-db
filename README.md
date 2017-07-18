@@ -1,44 +1,129 @@
-# python-getting-started
+# Light Wallet Database API
 
-A barebones Python app, which can easily be deployed to Heroku.
+This code runs a database that mirrors the NEO blockchain and serves APIs that don't exist anywhere else (for example, an API to get the full transaction history associated with an address). This API is likely a temporary measure as more public resources are built into [Neoscan](https://github.com/CityOfZion/neo-scan).
 
-This application supports the [Getting Started with Python on Heroku](https://devcenter.heroku.com/articles/getting-started-with-python) article - check it out.
+### STATUS: MainNet is currently fully synced and auto-updating. Will add TestNet soon.
 
-## Running Locally
+## How does this work?
 
-Make sure you have Python [installed properly](http://install.python-guide.org).  Also, install the [Heroku Toolbelt](https://toolbelt.heroku.com/) and [Postgres](https://devcenter.heroku.com/articles/heroku-postgresql#local-setup).
+This API and a MongoDB mirror of the Neo blockchain live on Heroku. The public API definition is in `api/api.py`. Code that manages keeping the database in sync with public nodes is in `clock.py` and `api/blockchain.py`. 
 
-```sh
-$ git clone git@github.com:heroku/python-getting-started.git
-$ cd python-getting-started
+[APScheduler](http://apscheduler.readthedocs.io/en/latest/) polls the blockchain every 5 seconds (to keep blocks up to date) and executes a repair process (for any potential missing blocks) every 5 minutes. The polling and repair logic are both executed by seperate worker processes under the Python [rq](http://python-rq.org) library to avoid overloading the API. Both the number of wep api servers and the number of workers processing incoming transaction data can be scaled arbitrarily.
 
-$ pip install -r requirements.txt
+## Overview of API
 
-$ createdb python_getting_started
+### Transaction History
 
-$ python manage.py migrate
-$ python manage.py collectstatic
+This is important because APIs on current block explorers such as antchain.org only provide information about unspent transactions associated with an address.
 
-$ heroku local
+Use `https://neo.herokuapp.com/transaction_history/{address}` to get full transaction history for an address:
+
+    curl https://neo.herokuapp.com/transaction_history/AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA
+
+This produces:
+
 ```
-
-Your app should now be running on [localhost:5000](http://localhost:5000/).
-
-## Deploying to Heroku
-
-```sh
-$ heroku create
-$ git push heroku master
-
-$ heroku run python manage.py migrate
-$ heroku open
+{
+  "address": "AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA",
+  "name": "transaction_history",
+  "receiver": [
+    {
+      "_id": {
+        "$oid": "596f06cff769b427dcff23b4"
+      },
+      "attributes": [],
+      "block_index": 1147002,
+      "net_fee": "0",
+      "scripts": [
+        {
+          "invocation": "40c7f767e6190bb333c9f26991110516a19bc540081b8bf69d01129f6289a8650bca02f60a5fb00cd949524955aa29300a45c6a74721ee4f5c79c9cdb73bc692ff",
+          "verification": "2103b98c67fa12e293ef004f8e191a656a0fafce28f7ba50667dc2d3a6e6dddb1061ac"
+        }
+      ],
+      "size": 262,
+      "sys_fee": "0",
+      "txid": "d94440d6fca3c9e1120d103618b0ec638bf34edaa30b0d3e1ac2af8a80bffb56",
+      "type": "ContractTransaction",
+      "version": 0,
+      "vin": [
+        {
+          "txid": "fa38ee2e95fca05cc2e37572ce21d8117169b6233358ad0d3b8955a79cd2fa39",
+          "vout": 1
+        }
+      ],
+      "vin_verbose": [
+        {
+          "address": "ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E",
+          "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+          "n": 1,
+          "txid": "fa38ee2e95fca05cc2e37572ce21d8117169b6233358ad0d3b8955a79cd2fa39",
+          "value": "650"
+        }
+      ],
+      "vout": [
+        {
+          "address": "AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA",
+          "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+          "n": 0,
+          "txid": "d94440d6fca3c9e1120d103618b0ec638bf34edaa30b0d3e1ac2af8a80bffb56",
+          "value": "1"
+        },
+        {
+          "address": "ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E",
+          "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+          "n": 1,
+          "txid": "d94440d6fca3c9e1120d103618b0ec638bf34edaa30b0d3e1ac2af8a80bffb56",
+          "value": "649"
+        }
+      ]
+    },
+    ...
+  ],
+  "sender": [
+    {
+      "_id": {
+        "$oid": "596f06cff769b427dcff23bf"
+      },
+      "attributes": [],
+      "block_index": 1147005,
+      "net_fee": "0",
+      "scripts": [
+        {
+          "invocation": "404b70f6787ab1fdcbcc3fd6c9f7f2a088aa84bcafd42b3b6fc453a50b3d3aa1f502ca87cba81826dd1f58d95719b2fdb3b3b642c66685b1836192e6f594d16a6a",
+          "verification": "21021d9d8206e15aa8a1e911283b28ad6d902c6d99790417e79449282fa4c2beb10eac"
+        }
+      ],
+      "size": 202,
+      "sys_fee": "0",
+      "txid": "ba6d8dd9e849d1a280ff9c1c559ba77716139cb3246ca05d6452dc05d54cf62c",
+      "type": "ContractTransaction",
+      "version": 0,
+      "vin": [
+        {
+          "txid": "d94440d6fca3c9e1120d103618b0ec638bf34edaa30b0d3e1ac2af8a80bffb56",
+          "vout": 0
+        }
+      ],
+      "vin_verbose": [
+        {
+          "address": "AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA",
+          "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+          "n": 0,
+          "txid": "d94440d6fca3c9e1120d103618b0ec638bf34edaa30b0d3e1ac2af8a80bffb56",
+          "value": "1"
+        }
+      ],
+      "vout": [
+        {
+          "address": "ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E",
+          "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+          "n": 0,
+          "txid": "ba6d8dd9e849d1a280ff9c1c559ba77716139cb3246ca05d6452dc05d54cf62c",
+          "value": "1"
+        }
+      ]
+    },
+    ...
+  ]
+}
 ```
-or
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
-
-## Documentation
-
-For more information about using Python on Heroku, see these Dev Center articles:
-
-- [Python on Heroku](https://devcenter.heroku.com/categories/python)

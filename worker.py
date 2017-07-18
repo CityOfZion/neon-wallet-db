@@ -1,13 +1,8 @@
 import os
-
-import redis
 from rq import Worker, Queue, Connection
+from api import redis_db as conn
 
 listen = ['high', 'default', 'low']
-
-redis_url = os.environ.get('REDISTOGO_URL')
-
-conn = redis.from_url(redis_url)
 
 if __name__ == '__main__':
     with Connection(conn):
