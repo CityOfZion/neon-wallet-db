@@ -1,0 +1,5 @@
+{
+  "name": "NEO Blockchain API",
+  "description": "API to server Neo blockchain data to light wallet",
+  "keywords": ["python", "neo", "blockchain" ],
+}
