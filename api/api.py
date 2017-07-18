@@ -25,7 +25,7 @@ def transaction_history(address):
                         "vin_verbose":{"$elemMatch":{"address":address}}})]
     out = json.loads(json.dumps({ "name":"transaction_history",
                      "address":address,
-                     "reciever": reciever,
+                     "receiver": reciever,
                      "sender": sender}, indent=4, default=json_util.default))
     return jsonify(out)
 
