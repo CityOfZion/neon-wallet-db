@@ -1,10 +1,12 @@
 # Lessons learned interacting with NEO block data
 
+This is a work in progress. More will appear here soon.
+
 ## ContractTransactions
 
-Transactions of type `ContractTransaction` are what send assets (e.g., NEO, GAS) over the chain. This is defined under the `"type"` key for a transaction. Other common transaction types are, for example, `ClaimTransaction` and `MinerTransaction`.
+Transactions of type `ContractTransaction` send assets (e.g., NEO, GAS) over the chain. A transaction type is defined under the `"type"` key for in transaction block data. Other common transaction types are, for example, `ClaimTransaction` and `MinerTransaction`.
 
-For `ContractTransaction`s `"vin"` and `"vout"` are the most important fields. The `"vin"` field defines a list of transactions, formerly received by the sender, that will now be used to send an asset to the receiver. The `"vout"` field defines a list of addresses and amounts where the assets collectively defined by `"vin"` will be sent. For example:
+For `ContractTransaction`s `"vin"` and `"vout"` are the most important fields as they define how much of an asset will be sent, where it comes from, and where it will go. The `"vin"` field defines a list of transactions, formerly received by the sender, that will now be used to send an asset to the receiver. The `"vout"` field defines a list of addresses and amounts where the sum of the assets in `"vin"` will be sent. For example:
 
 ```
 {...
@@ -35,9 +37,9 @@ For `ContractTransaction`s `"vin"` and `"vout"` are the most important fields. T
 
 ### How do you know who is sending?
 
-While the receiver addresses are clear from `"vout"`, it is not immediately clear from the transaction data where the assets to be sent are originating from. The `"vin"` field provides a list objects that contain transaction ids, but as we have just seen, transactions often deposit assets in multiple accounts, so transaction ids are not enough to know where the assets are originating from. However, each object in the `"vin"` list also provides a `"vout"` parameter (e.g. `transaction["vin"][0]["vout"]`). This parameter defines an index that maps onto the `"vout"` field in the originating transaction, and so indirectly can be used to tell us: (1) what address the asset is being sent from, and (2) the amount for that transaction that will now be sent.
+While the receiver addresses are clear from `"vout"`, it is not immediately obvious who is sending the assets. The `"vin"` field provides a list objects that contain transaction ids, but as we have just seen, transactions often deposit assets in multiple accounts, so transaction ids are not enough to know where the assets are originating from. However, each object in the `"vin"` list also provides a `"vout"` parameter (e.g. `transaction["vin"][0]["vout"]`). This parameter defines an index that maps onto the `"vout"` field in its paired transaction (e.g., `transaction["vin"][0]["txid"]`), and so indirectly it can be used to tell us: (1) what address the asset is being sent from, and (2) the amount for that transaction that will now be sent.
 
-As the light wallet database processes new blocks on the chain, it automatically adds this information to transaction block data through the field `"vin_verbose"`. For example:
+As the light wallet database served by this API processes new blocks on the chain, it *automatically adds this information to transaction block data* through the field `"vin_verbose"`. For example:
 
 ```
 {...
@@ -61,4 +63,4 @@ As the light wallet database processes new blocks on the chain, it automatically
 
 ### How much of an asset is being sent?
 
-The sum of the asset amounts referenced by each input transaction id in `"vin"` (under the senders address) will be sent in this transaction. For this reason, to send a precise amount of an asset (not just the sum of available previous transactions), change will often be sent to the receiver. For instance, in the example above, you can see that the sender's address (`ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E`) also appears in `"vout"`. This means that while 650 total NEO will be sent, 649 will go back to the sender, for a total difference of 1 NEO going to the receiver `AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA`.
+The sum of the asset amounts referenced by each input transaction id in `"vin"` (under the sender's address) will be sent in this transaction. For this reason, to send a precise amount of an asset change will often be sent to the receiver. For instance, in the example above, you can see that the sender's address (`ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E`) also appears in `"vout"`. This means that while 650 total NEO will be sent, 649 will go back to the sender, for a total difference of 1 NEO going to the receiver `AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA`.
