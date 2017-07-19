@@ -1,4 +1,4 @@
-# Lessons Learned Interacting with NEO block data
+# Lessons learned interacting with NEO block data
 
 ## ContractTransactions
 
