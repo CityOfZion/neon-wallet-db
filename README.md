@@ -20,7 +20,7 @@ Use `https://neo.herokuapp.com/transaction_history/{address}` to get full transa
 
     curl https://neo.herokuapp.com/transaction_history/AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA
 
-This produces:
+This produces a json object with two main keys: `"receiver"` holds all transactions that result in assets being received by the address in question (i.e., where that address appears in `"vout"`), and `"sender"` holds all transactions where an asset was sent by the address in question (i.e., where the transaction id and index pair in `"vin"` corresponds to that address). For more details see the [documentation](/docs/Overview.md).
 
 ```
 {
