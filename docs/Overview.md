@@ -39,7 +39,7 @@ For `ContractTransaction`s `"vin"` and `"vout"` are the most important fields as
 
 While the receiver addresses are clear from `"vout"`, it is not immediately obvious who is sending the assets. The `"vin"` field provides a list objects that contain transaction ids, but as we have just seen, transactions often deposit assets in multiple accounts, so transaction ids are not enough to know where the assets are originating from. However, each object in the `"vin"` list also provides a `"vout"` parameter (e.g. `transaction["vin"][0]["vout"]`). This parameter defines an index that maps onto the `"vout"` field in its paired transaction (e.g., `transaction["vin"][0]["txid"]`), and so indirectly it can be used to tell us: (1) what address the asset is being sent from, and (2) the amount for that transaction that will now be sent.
 
-From an API standpoint, doing two queries to understand where a transaction is sending from is very inefficient. The light wallet database API aims to solve this problem. As it processes new blocks on the chain, our database *automatically adds this information to transaction block data* in the field `"vin_verbose"`. For example:
+From an API standpoint, doing two queries to understand where a transaction is sending from is very inefficient. The light wallet database API aims to solve this problem. So as it processes new blocks on the chain, the database *automatically looks up and adds this information to transaction block data* in the field `"vin_verbose"`, which is then queryable by API users. For example:
 
 ```
 {...
