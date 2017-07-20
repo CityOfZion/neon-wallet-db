@@ -16,7 +16,7 @@ All APIs work on both MainNet (https://neo.herokuapp.com) and TestNet (https://n
 
 ### Balance data
 
-Given an address, return the current balance of NEO and GAS, as well as a list of transaction ids and amounts for unspent assets: `https://neo.herokuapp.com/balance/{address}`. Knowing these unspent transaction ids is important for light wallets because they need them to send assets!
+Given an address, return the current balance of NEO and GAS, as well as a list of transaction ids and amounts for unspent assets: `https://neo.herokuapp.com/balance/{address}`. Knowing these unspent transaction ids is important for light wallets because [wallets need them to send assets](/docs/Overview.md)!
 
 For example:
 
@@ -44,6 +44,7 @@ This will produce:
 }
 ```
 
+### Transaction data
 
 ### Transaction History
 

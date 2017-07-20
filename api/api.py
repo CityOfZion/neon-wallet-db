@@ -17,6 +17,9 @@ q = Queue(connection=redis_db)
 transaction_db = db['transactions']
 blockchain_db = db['blockchain']
 
+def db2json(db_obj):
+    return json.loads(json.dumps(db_obj, indent=4, default=json_util.default))
+
 # walk over "vout" transactions to collect those that match desired address
 def info_received_transaction(address, tx):
     out = {"txid": tx["txid"]}
@@ -61,10 +64,10 @@ def get_transactions(address):
 @application.route("/transaction_history/<address>")
 def transaction_history(address):
     receiver, sender = get_transactions(address)
-    transactions = json.loads(json.dumps({ "name":"transaction_history",
-                     "address":address,
-                     "receiver": reciever,
-                     "sender": sender}, indent=4, default=json_util.default))
+    transactions = db2json({ "name":"transaction_history",
+                             "address":address,
+                             "receiver": receiver,
+                             "sender": sender })
     return jsonify(transactions)
 
 # get current block height
@@ -72,6 +75,11 @@ def transaction_history(address):
 def block_height():
     height = [x for x in blockchain_db.find().sort("index", -1).limit(1)][0]["index"]
     return jsonify({"block_height": height})
+
+# get transaction data from the DB
+@application.route("/get_transaction/<txid>")
+def get_transaction(txid):
+    return jsonify(db2json(transaction_db.find_one({"txid": txid})))
 
 # get balance and unspent assets
 @application.route("/balance/<address>")
