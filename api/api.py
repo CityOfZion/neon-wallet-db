@@ -20,6 +20,14 @@ blockchain_db = db['blockchain']
 def db2json(db_obj):
     return json.loads(json.dumps(db_obj, indent=4, default=json_util.default))
 
+# return a dictionary of spent txids => transaction when spent
+def get_spent_ids(txs):
+    spent_ids = {}
+    for tx in txs:
+        for tx_sent in tx["vin"]:
+            spent_ids[tx_sent["txid"]] = tx
+    return spent_ids
+
 # walk over "vout" transactions to collect those that match desired address
 def info_received_transaction(address, tx):
     out = {"txid": tx["txid"]}
@@ -85,13 +93,27 @@ def get_transaction(txid):
 @application.route("/balance/<address>")
 def get_balance(address):
     receiver, sender = get_transactions(address)
-    spent_ids = {}
-    for tx in sender:
-        for tx_sent in tx["vin"]:
-            spent_ids[tx_sent["txid"]] = True
+    spent_ids = get_spent_ids(sender)
     unspent = [x for x in receiver if not x['txid'] in spent_ids]
     ans_total, anc_total = [sum([amount_sent(address, id_, x["vout"]) for x in unspent]) for id_ in [ANS_ID, ANC_ID]]
     return jsonify({"NEO": ans_total, "GAS": anc_total, "unspent": [info_received_transaction(address, tx) for tx in unspent]})
+
+@application.route("/get_claim/<address>")
+def get_claim(address):
+    receiver, sender = get_transactions(address)
+    spent_ids = get_spent_ids(sender)
+    spent = [x for x in receiver if x['txid'] in spent_ids and info_received_transaction(address, x)["asset"] == "NEO"]
+    block_diffs = []
+    for tx in spent:
+        obj = {"txid": tx["txid"]}
+        obj["start"] = tx["block_index"]
+        obj["value"] = info_received_transaction(address, tx)["value"]
+        when_spent = spent_ids[tx["txid"]]
+        obj["end"] = when_spent["block_index"]
+        obj["claim"] = 8.0 * float(obj["end"]-obj["start"]) * obj["value"] / 100000000
+        block_diffs.append(obj)
+    total = sum([x["claim"] for x in block_diffs])
+    return jsonify({"total_claim":total, "claims": block_diffs})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
