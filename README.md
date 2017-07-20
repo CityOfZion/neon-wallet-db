@@ -2,7 +2,7 @@
 
 This code runs a database that mirrors the NEO blockchain and serves APIs that don't exist anywhere else (for example, an API to get the full transaction history associated with an address). This API is likely a temporary measure as more public resources are built into [Neoscan](https://github.com/CityOfZion/neo-scan).
 
-### STATUS: MainNet is currently fully synced and auto-updating. Will add TestNet soon.
+### STATUS: MainNet and TestNet are both fully synced and auto-updating.
 
 ## How does this work?
 
@@ -11,6 +11,8 @@ This API and a MongoDB mirror of the Neo blockchain live on Heroku. The public A
 [APScheduler](http://apscheduler.readthedocs.io/en/latest/) polls the blockchain every 5 seconds (to keep blocks up to date) and executes a repair process (for any potential missing blocks) every 5 minutes. The polling and repair logic are both executed by seperate worker processes under the Python [rq](http://python-rq.org) library to avoid overloading the API. Both the number of wep api servers and the number of workers processing incoming transaction data can be scaled arbitrarily.
 
 ## Overview of API
+
+All APIs work on both MainNet (https://neo.herokuapp.com) and TestNet (https://neo-testnet.herokuapp.com).
 
 ### Transaction History
 
