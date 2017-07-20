@@ -107,7 +107,7 @@ This produces:
 
 ### Transaction History
 
-This is important because APIs on current block explorers such as antchain.org only provide information about unspent transactions associated with an address.
+Current block explorers such as [antchain.org](http://antchain.org) and the current Node APIs only provide information about *unspent transactions* associated with an address. To claim GAS, light wallets need access to more than just unspent transactions! 
 
 Use `https://neo.herokuapp.com/transaction_history/{address}` to get full transaction history for an address:
 
