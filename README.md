@@ -46,6 +46,65 @@ This will produce:
 
 ### Transaction data
 
+Get detailed information about a transaction: `http://neo-testnet.herokuapp.com/get_transaction/{txid}`. This is identical to the structure returned by the Node CLI except that `ContractTransactions` have been augmented by `vin_verbose` with extra information about input transactions.  
+
+For example:
+
+    curl http://neo-testnet.herokuapp.com/get_transaction/ec4dc0092d5adf8cdf30eadf5116dbb6f138b2e35ca2f1a26d992d69388e0b95
+
+This produces:
+
+```json
+{
+  "_id": {
+    "$oid": "59700381048252991e506558"
+  },
+  "attributes": [],
+  "block_index": 285873,
+  "net_fee": "0",
+  "scripts": [
+    {
+      "invocation": "40bcd8a5787e1027cda3cf03e9d1797bed93363ed3c3ff3b6162c0863ed1b5ad50b932a6cea6bd7ae01b6440dc3b509422614742891f0699454988c1b459c84330",
+      "verification": "2102028a99826edc0c97d18e22b6932373d908d323aa7f92656a77ec26e8861699efac"
+    }
+  ],
+  "size": 262,
+  "sys_fee": "0",
+  "txid": "ec4dc0092d5adf8cdf30eadf5116dbb6f138b2e35ca2f1a26d992d69388e0b95",
+  "type": "ContractTransaction",
+  "version": 0,
+  "vin": [
+    {
+      "txid": "f584373e6a98a88a13b3a61423550063425b6ae2a95dc6b87b2e1e3f49fb3b98",
+      "vout": 1
+    }
+  ],
+  "vin_verbose": [
+    {
+      "address": "ALq7AWrhAueN6mJNqk6FHJjnsEoPRytLdW",
+      "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+      "n": 1,
+      "txid": "f584373e6a98a88a13b3a61423550063425b6ae2a95dc6b87b2e1e3f49fb3b98",
+      "value": "9746"
+    }
+  ],
+  "vout": [
+    {
+      "address": "ALpwWoxKLwbfCTkRpK2iXrXpaMHgWGcrDV",
+      "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+      "n": 0,
+      "value": "900"
+    },
+    {
+      "address": "ALq7AWrhAueN6mJNqk6FHJjnsEoPRytLdW",
+      "asset": "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b",
+      "n": 1,
+      "value": "8846"
+    }
+  ]
+}
+```
+
 ### Transaction History
 
 This is important because APIs on current block explorers such as antchain.org only provide information about unspent transactions associated with an address.
