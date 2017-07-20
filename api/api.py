@@ -31,25 +31,28 @@ def get_spent_ids(txs):
 # walk over "vout" transactions to collect those that match desired address
 def info_received_transaction(address, tx):
     out = {"txid": tx["txid"]}
-    neo_tx, gas_tx = [], []
-    for obj in tx["vout"]:
+    neo_tx, gas_tx = None, None
+    index = None
+    for i,obj in enumerate(tx["vout"]):
         if obj["address"] == address:
+            index = i
             if obj["asset"] == ANS_ID:
-                neo_tx.append(int(obj["value"]))
+                neo_tx = int(obj["value"])
             elif obj["asset"] == ANC_ID:
-                gas_tx.append(int(obj["value"]))
+                gas_tx = int(obj["value"])
             else:
                 raise Exception("Not a valid asset")
-    if len(neo_tx) > 0 and len(gas_tx) > 0:
+    if neo_tx and gas_tx:
         raise Exception("Cannot receive two different assets in one transaction")
-    elif len(neo_tx) == 0 and len(gas_tx) == 0:
+    elif (not neo_tx) and (not gas_tx):
         raise Exception("Transaction contains no asset sent to this address")
-    elif len(neo_tx) > 0:
+    elif neo_tx:
         out["asset"] = "NEO"
-        out["value"] = sum(neo_tx)
+        out["value"] = neo_tx
     else:
         out["asset"] = "GAS"
-        out["value"] = sum(gas_tx)
+        out["value"] = gas_tx
+    out["index"] = index
     return out
 
 # get the amount sent to an address from the vout list
@@ -107,7 +110,9 @@ def get_claim(address):
     for tx in spent:
         obj = {"txid": tx["txid"]}
         obj["start"] = tx["block_index"]
-        obj["value"] = info_received_transaction(address, tx)["value"]
+        info = info_received_transaction(address, tx)
+        obj["value"] = info["value"]
+        obj["index"] = info["index"]
         when_spent = spent_ids[tx["txid"]]
         obj["end"] = when_spent["block_index"]
         obj["claim"] = 8.0 * float(obj["end"]-obj["start"]) * obj["value"] / 100000000
