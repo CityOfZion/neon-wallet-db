@@ -1,6 +1,6 @@
 # Light Wallet Database API
 
-This code runs a database that mirrors the NEO blockchain and serves APIs that don't exist anywhere else (for example, an API to get the full transaction history associated with an address). This API is likely a temporary measure as more public resources are built into [Neoscan](https://github.com/CityOfZion/neo-scan).
+This code runs a database that mirrors the NEO blockchain and serves several APIs that don't exist anywhere else (for example, an API to get the full transaction history associated with an address). This project will likely be a temporary measure as more public resources are built into [Neoscan](https://github.com/CityOfZion/neo-scan).
 
 ### STATUS: MainNet and TestNet are both fully synced and auto-updating.
 
@@ -107,7 +107,7 @@ This produces:
 
 ### Transaction History
 
-This is important because APIs on current block explorers such as antchain.org only provide information about unspent transactions associated with an address.
+Current block explorers such as [antchain.org](http://antchain.org) and the current Node APIs only provide information about *unspent transactions* associated with an address. To claim GAS, light wallets need access to more than just unspent transactions! 
 
 Use `https://neo.herokuapp.com/transaction_history/{address}` to get full transaction history for an address:
 
