@@ -115,7 +115,7 @@ def get_claim(address):
         obj["index"] = info["index"]
         when_spent = spent_ids[tx["txid"]]
         obj["end"] = when_spent["block_index"]
-        obj["claim"] = 8.0 * float(obj["end"]-obj["start"]) * obj["value"] / 100000000
+        obj["claim"] = int(8.0 * float(obj["end"]-obj["start"]) * obj["value"])
         block_diffs.append(obj)
     total = sum([x["claim"] for x in block_diffs])
     return jsonify({"total_claim":total, "claims": block_diffs})
