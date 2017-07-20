@@ -6,13 +6,44 @@ This code runs a database that mirrors the NEO blockchain and serves APIs that d
 
 ## How does this work?
 
-This API and a MongoDB mirror of the Neo blockchain live on Heroku. The public API definition is in `api/api.py`. Code that manages keeping the database in sync with public nodes is in `clock.py` and `api/blockchain.py`. 
+This API and a MongoDB mirror of the Neo blockchain live on Heroku. The public API definition is in `api/api.py`. Code that manages keeping the database in sync with public nodes is in `clock.py` and `api/blockchain.py`.
 
 [APScheduler](http://apscheduler.readthedocs.io/en/latest/) polls the blockchain every 5 seconds (to keep blocks up to date) and executes a repair process (for any potential missing blocks) every 5 minutes. The polling and repair logic are both executed by seperate worker processes under the Python [rq](http://python-rq.org) library to avoid overloading the API. Both the number of wep api servers and the number of workers processing incoming transaction data can be scaled arbitrarily.
 
 ## Overview of API
 
 All APIs work on both MainNet (https://neo.herokuapp.com) and TestNet (https://neo-testnet.herokuapp.com).
+
+### Balance data
+
+Given an address, return the current balance of NEO and GAS, as well as a list of transaction ids and amounts for unspent assets: `https://neo.herokuapp.com/balance/{address}`. Knowing these unspent transaction ids is important for light wallets because they need them to send assets!
+
+For example:
+
+    curl http://neo-testnet.herokuapp.com/balance/AdWDaCmhPmxgksr2iTVuGcLcncSouV6XGv
+
+This will produce:
+
+```json
+{
+  "GAS": 64,
+  "NEO": 54,
+  "unspent": [
+    {
+      "asset": "GAS",
+      "txid": "4a38a701099bc61ec38bca03477a2e88d9077267a66062d675105df32ef9924c",
+      "value": 10
+    },
+    {
+      "asset": "NEO",
+      "txid": "9d3658842eb6e61f0913f28689f7977d48e931005c92fde4664dcdde8ea5a745",
+      "value": 7
+    },
+    ...
+  ]
+}
+```
+
 
 ### Transaction History
 
@@ -24,7 +55,7 @@ Use `https://neo.herokuapp.com/transaction_history/{address}` to get full transa
 
 This produces a json object with two main keys: `"receiver"` holds all transactions that result in assets being received by the address in question (i.e., where that address appears in `"vout"`), and `"sender"` holds all transactions where an asset was sent by the address in question (i.e., where the transaction id and index pair in `"vin"` corresponds to that address). For more details see the [documentation](/docs/Overview.md).
 
-```
+```json
 {
   "address": "AU2CRdjozCr1LKmAAs32BVdyyM7RWcQQTA",
   "name": "transaction_history",

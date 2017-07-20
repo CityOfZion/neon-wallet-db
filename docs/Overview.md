@@ -8,7 +8,7 @@ Transactions of type `ContractTransaction` send assets (e.g., NEO, GAS) over the
 
 For `ContractTransaction`s `"vin"` and `"vout"` are the most important fields as they define how much of an asset will be sent, where it comes from, and where it will go. The `"vin"` field defines a list of transactions, formerly received by the sender, that will now be used to send an asset to the receiver. The `"vout"` field defines a list of addresses and amounts where the sum of the assets in `"vin"` will be sent. For example:
 
-```
+```json
 {...
 "vin": [
         {
@@ -41,7 +41,7 @@ While the receiver addresses are clear from `"vout"`, it is not immediately obvi
 
 From an API standpoint, doing two queries to understand where a transaction is sending from is very inefficient. The light wallet database API aims to solve this problem. So as it processes new blocks on the chain, the database *automatically looks up and adds this information to transaction block data* in the field `"vin_verbose"`, which is then queryable by API users. For example:
 
-```
+```json
 {...
 "vin": [
         {
