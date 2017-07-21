@@ -21,12 +21,20 @@ def db2json(db_obj):
     return json.loads(json.dumps(db_obj, indent=4, default=json_util.default))
 
 # return a dictionary of spent txids => transaction when spent
-def get_ids(txs):
+def get_vin_txids(txs):
     spent_ids = {}
     for tx in txs:
         for tx_sent in tx["vin"]:
             spent_ids[tx_sent["txid"]] = tx
     return spent_ids
+
+# return a dictionary of claimed txids => transaction when claimed
+def get_claimed_txids(txs):
+    claimed_ids = {}
+    for tx in txs:
+        for tx_claimed in tx["claims"]:
+            claimed_ids[tx_claimed["txid"]] = tx
+    return claimed_ids
 
 # walk over "vout" transactions to collect those that match desired address
 def info_received_transaction(address, tx):
@@ -104,7 +112,7 @@ def get_transaction(txid):
 @application.route("/balance/<address>")
 def get_balance(address):
     receiver, sender = get_transactions(address)
-    spent_ids = get_ids(sender)
+    spent_ids = get_vin_txids(sender)
     unspent = [x for x in receiver if not x['txid'] in spent_ids]
     ans_total, anc_total = [sum([amount_sent(address, id_, x["vout"]) for x in unspent]) for id_ in [ANS_ID, ANC_ID]]
     return jsonify({"NEO": ans_total, "GAS": anc_total, "unspent": [info_received_transaction(address, tx) for tx in unspent]})
@@ -113,8 +121,8 @@ def get_balance(address):
 def get_claim(address):
     receiver, sender = get_transactions(address)
     past_claims = get_past_claims(address)
-    spent_ids = get_ids(sender)
-    claim_ids = get_ids(past_claims)
+    spent_ids = get_vin_txids(sender)
+    claim_ids = get_claimed_txids(past_claims)
     valid_claims = [tx for tx in receiver if is_valid_claim(tx, address, spent_ids, claim_ids)]
     block_diffs = []
     for tx in valid_claims:
