@@ -50,7 +50,7 @@ def info_received_transaction(address, tx):
                 neo_tx = int(obj["value"])
                 index_neo = i
             if obj["asset"] == ANC_ID:
-                gas_tx = int(obj["value"])
+                gas_tx = float(obj["value"])
                 index_gas = i
     if (not neo_tx) and (not gas_tx):
         raise Exception("Transaction contains no asset sent to this address")
@@ -65,14 +65,17 @@ def amount_sent(address, asset_id, vout):
     total = 0
     for obj in vout:
         if obj["address"] == address and asset_id == obj["asset"]:
-            total += int(obj["value"])
+            if asset_id == ANS_ID:
+                total += int(obj["value"])
+            else:
+                total += float(obj["value"])
     return total
 
 # helper function to get all transactions from an address
 def get_transactions(address):
-    receiver = [t for t in transaction_db.find({"type":"ContractTransaction",
+    receiver = [t for t in transaction_db.find({
                         "vout":{"$elemMatch":{"address":address}}})]
-    sender = [t for t in transaction_db.find({"type":"ContractTransaction",
+    sender = [t for t in transaction_db.find({ #{"type":"ContractTransaction",
                         "vin_verbose":{"$elemMatch":{"address":address}}})]
     return receiver, sender
 
