@@ -17,15 +17,18 @@ q = Queue(connection=redis_db)
 transaction_db = db['transactions']
 blockchain_db = db['blockchain']
 
+symbol_dict = {ANS_ID: "NEO", ANC_ID: "GAS"}
+
 def db2json(db_obj):
     return json.loads(json.dumps(db_obj, indent=4, default=json_util.default))
 
 # return a dictionary of spent txids => transaction when spent
 def get_vin_txids(txs):
-    spent_ids = {}
+    spent_ids = {"NEO":{}, "GAS":{}}
     for tx in txs:
-        for tx_sent in tx["vin"]:
-            spent_ids[tx_sent["txid"]] = tx
+        for tx_sent in tx["vin_verbose"]:
+            asset_symbol = symbol_dict[tx_sent["asset"]]
+            spent_ids[asset_symbol][tx_sent["txid"]] = tx
     return spent_ids
 
 # return a dictionary of claimed txids => transaction when claimed
@@ -40,27 +43,21 @@ def get_claimed_txids(txs):
 def info_received_transaction(address, tx):
     out = {"txid": tx["txid"]}
     neo_tx, gas_tx = None, None
-    index = None
+    index_neo, index_gas = None, None
     for i,obj in enumerate(tx["vout"]):
         if obj["address"] == address:
-            index = i
             if obj["asset"] == ANS_ID:
                 neo_tx = int(obj["value"])
-            elif obj["asset"] == ANC_ID:
+                index_neo = i
+            if obj["asset"] == ANC_ID:
                 gas_tx = int(obj["value"])
-            else:
-                raise Exception("Not a valid asset")
-    if neo_tx and gas_tx:
-        raise Exception("Cannot receive two different assets in one transaction")
-    elif (not neo_tx) and (not gas_tx):
+                index_gas = i
+    if (not neo_tx) and (not gas_tx):
         raise Exception("Transaction contains no asset sent to this address")
-    elif neo_tx:
-        out["asset"] = "NEO"
-        out["value"] = neo_tx
-    else:
-        out["asset"] = "GAS"
-        out["value"] = gas_tx
-    out["index"] = index
+    if neo_tx:
+        out["NEO"] = {"value": neo_tx, "index": index_neo}
+    if gas_tx:
+        out["GAS"] = {"value": gas_tx, "index": index_gas}
     return out
 
 # get the amount sent to an address from the vout list
@@ -85,7 +82,11 @@ def get_past_claims(address):
         "vout":{"$elemMatch":{"address":address}}})]
 
 def is_valid_claim(tx, address, spent_ids, claim_ids):
-    return tx['txid'] in spent_ids and not tx['txid'] in claim_ids and info_received_transaction(address, tx)["asset"] == "NEO"
+    # if tx['block_index'] < 270000:
+    #     return False
+    # if tx["vin_verbose"][0]["address"] != address:
+    #     return False
+    return tx['txid'] in spent_ids and not tx['txid'] in claim_ids and "NEO" in info_received_transaction(address, tx)
 
 # return all transactions associated with an address (sending to or sent from)
 @application.route("/transaction_history/<address>")
@@ -113,30 +114,40 @@ def get_transaction(txid):
 def get_balance(address):
     receiver, sender = get_transactions(address)
     spent_ids = get_vin_txids(sender)
-    unspent = [x for x in receiver if not x['txid'] in spent_ids]
-    ans_total, anc_total = [sum([amount_sent(address, id_, x["vout"]) for x in unspent]) for id_ in [ANS_ID, ANC_ID]]
-    return jsonify({"NEO": ans_total, "GAS": anc_total, "unspent": [info_received_transaction(address, tx) for tx in unspent]})
+    spent_ids_gas = spent_ids["GAS"]
+    spent_ids_neo = spent_ids["NEO"]
+    unspent_neo = [x for x in receiver if 'NEO' in info_received_transaction(address, x) and not x['txid'] in spent_ids_neo]
+    unspent_gas = [x for x in receiver if 'GAS' in info_received_transaction(address, x) and not x['txid'] in spent_ids_gas]
+    neo_total = sum([amount_sent(address, ANS_ID, x["vout"]) for x in unspent_neo])
+    gas_total = sum([amount_sent(address, ANC_ID, x["vout"]) for x in unspent_gas])
+    return jsonify({
+        "NEO": {"balance": neo_total,
+                "unspent": [{**info_received_transaction(address, tx)["NEO"], "txid": tx['txid']} for tx in unspent_neo] },
+        "GAS": { "balance": gas_total,
+                 "unspent": [{**info_received_transaction(address, tx)["GAS"], "txid": tx['txid']} for tx in unspent_gas] }})
 
+# get available claims at an address
 @application.route("/get_claim/<address>")
 def get_claim(address):
     receiver, sender = get_transactions(address)
     past_claims = get_past_claims(address)
     spent_ids = get_vin_txids(sender)
+    spent_ids_neo = spent_ids["NEO"]
     claim_ids = get_claimed_txids(past_claims)
-    valid_claims = [tx for tx in receiver if is_valid_claim(tx, address, spent_ids, claim_ids)]
+    valid_claims = [tx for tx in receiver if is_valid_claim(tx, address, spent_ids_neo, claim_ids)]
     block_diffs = []
     for tx in valid_claims:
         obj = {"txid": tx["txid"]}
         obj["start"] = tx["block_index"]
         info = info_received_transaction(address, tx)
-        obj["value"] = info["value"]
-        obj["index"] = info["index"]
-        when_spent = spent_ids[tx["txid"]]
+        obj["value"] = info["NEO"]["value"]
+        obj["index"] = info["NEO"]["index"]
+        when_spent = spent_ids_neo[tx["txid"]]
         obj["end"] = when_spent["block_index"]
-        obj["claim"] = int(8.0 * (obj["end"]-obj["start"]) * obj["value"])
+        obj["claim"] = 8 * (obj["end"]-obj["start"]) * obj["value"]
         block_diffs.append(obj)
     total = sum([x["claim"] for x in block_diffs])
-    return jsonify({"total_claim":total, "claims": block_diffs})
+    return jsonify({"total_claim":total, "claims": block_diffs, "past_claims": [k for k,v in claim_ids.items()]})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
