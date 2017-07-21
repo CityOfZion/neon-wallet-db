@@ -21,7 +21,7 @@ def db2json(db_obj):
     return json.loads(json.dumps(db_obj, indent=4, default=json_util.default))
 
 # return a dictionary of spent txids => transaction when spent
-def get_spent_ids(txs):
+def get_ids(txs):
     spent_ids = {}
     for tx in txs:
         for tx_sent in tx["vin"]:
@@ -71,6 +71,14 @@ def get_transactions(address):
                         "vin_verbose":{"$elemMatch":{"address":address}}})]
     return receiver, sender
 
+def get_past_claims(address):
+    return [t for t in transaction_db.find({
+        "type":"ClaimTransaction",
+        "vout":{"$elemMatch":{"address":address}}})]
+
+def is_valid_claim(tx, address, spent_ids, claim_ids):
+    return tx['txid'] in spent_ids and not tx['txid'] in claim_ids and info_received_transaction(address, tx)["asset"] == "NEO"
+
 # return all transactions associated with an address (sending to or sent from)
 @application.route("/transaction_history/<address>")
 def transaction_history(address):
@@ -96,7 +104,7 @@ def get_transaction(txid):
 @application.route("/balance/<address>")
 def get_balance(address):
     receiver, sender = get_transactions(address)
-    spent_ids = get_spent_ids(sender)
+    spent_ids = get_ids(sender)
     unspent = [x for x in receiver if not x['txid'] in spent_ids]
     ans_total, anc_total = [sum([amount_sent(address, id_, x["vout"]) for x in unspent]) for id_ in [ANS_ID, ANC_ID]]
     return jsonify({"NEO": ans_total, "GAS": anc_total, "unspent": [info_received_transaction(address, tx) for tx in unspent]})
@@ -104,10 +112,12 @@ def get_balance(address):
 @application.route("/get_claim/<address>")
 def get_claim(address):
     receiver, sender = get_transactions(address)
-    spent_ids = get_spent_ids(sender)
-    spent = [x for x in receiver if x['txid'] in spent_ids and info_received_transaction(address, x)["asset"] == "NEO"]
+    past_claims = get_past_claims(address)
+    spent_ids = get_ids(sender)
+    claim_ids = get_ids(past_claims)
+    valid_claims = [tx for tx in receiver if is_valid_claim(tx, address, spent_ids, claim_ids)]
     block_diffs = []
-    for tx in spent:
+    for tx in valid_claims:
         obj = {"txid": tx["txid"]}
         obj["start"] = tx["block_index"]
         info = info_received_transaction(address, tx)
@@ -115,7 +125,7 @@ def get_claim(address):
         obj["index"] = info["index"]
         when_spent = spent_ids[tx["txid"]]
         obj["end"] = when_spent["block_index"]
-        obj["claim"] = int(8.0 * float(obj["end"]-obj["start"]) * obj["value"])
+        obj["claim"] = int(8.0 * (obj["end"]-obj["start"]) * obj["value"])
         block_diffs.append(obj)
     total = sum([x["claim"] for x in block_diffs])
     return jsonify({"total_claim":total, "claims": block_diffs})
