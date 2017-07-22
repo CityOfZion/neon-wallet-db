@@ -8,7 +8,7 @@ import os
 from .db import db, redis_db
 from rq import Queue
 from .blockchain import storeBlockInDB
-from .util import ANS_ID, ANC_ID
+from .util import ANS_ID, ANC_ID, calculate_bonus
 
 application = Flask(__name__)
 
@@ -147,10 +147,10 @@ def get_claim(address):
         obj["index"] = info["NEO"]["index"]
         when_spent = spent_ids_neo[tx["txid"]]
         obj["end"] = when_spent["block_index"]
-        obj["claim"] = 8 * (obj["end"]-obj["start"]) * obj["value"]
+        obj["claim"] = calculate_bonus([obj])
         block_diffs.append(obj)
     total = sum([x["claim"] for x in block_diffs])
-    return jsonify({"total_claim":total, "claims": block_diffs, "past_claims": [k for k,v in claim_ids.items()]})
+    return jsonify({"total_claim": calculate_bonus(block_diffs), "claims": block_diffs, "past_claims": [k for k,v in claim_ids.items()]})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
