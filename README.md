@@ -107,7 +107,7 @@ This produces:
 
 ### Claiming GAS
 
-Current block explorers do not provide a list of the available claims for an address. The light wallet API supports this through: `http://localhost:5000/get_claim/{address}`
+Current block explorers do not provide a list of the available claims for an address. The light wallet API supports this through: `http://neo.herokuapp.com/get_claim/{address}`
 
 For example:
 
