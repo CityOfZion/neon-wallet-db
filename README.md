@@ -113,7 +113,7 @@ For example:
 
     curl http://neo-testnet.herokuapp.com/get_claim/ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E
 
-This produces a json object where `claims` provides a list of available GAS claims and `total_claim` provides the total amount of GAS available to claim. These claims are denominated in units of GAS * 100000000 to support the format required by the network protocol. So you can divide these numbers by 100000000 to get the number of GAS the account would actually receive.
+This produces a json object where `claims` provides a list of available GAS claims and `total_claim` provides the total amount of GAS available to claim. These claims are denominated in units of `GAS * 100000000` to support the format required by the network protocol. So you can divide these numbers by `100000000` to get the number of GAS the account would actually receive.
 
 ```json
 {
