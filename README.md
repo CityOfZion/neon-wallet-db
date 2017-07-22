@@ -115,7 +115,7 @@ For example:
 
 This produces a json object where `claims` provides a list of available GAS claims and `total_claim` provides the total amount of GAS available to claim. These claims are denominated in units of `GAS * 100000000` to support the format required by the network protocol. So you can divide these numbers by `100000000` to get the number of GAS the account would actually receive. For each claim object, `value` corresponds to the number of Neo that generated the claim, `start` and `end` correspond to the starting and ending block heights over which the GAS were generated, `claim` gives the amount of GAS to claim (divided by 100m), `txid` provides the id of the transaction that generates the claim, and `index` provides the `vout` index for that transaction (necessary to submit a claim over the network).
 
-For now, this API only supports "available claims". For more on this, see the [documentation](/docs/Overview.md#Claims).
+For now, this API only supports "available claims". For more on this, see the [documentation](/docs/Overview.md#claims).
 
 ```json
 {
