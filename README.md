@@ -105,9 +105,67 @@ This produces:
 }
 ```
 
+### Claiming GAS
+
+Current block explorers do not provide a list of the available claims for an address. The light wallet API supports this through: `http://localhost:5000/get_claim/{address}`
+
+For example:
+
+    curl http://neo-testnet.herokuapp.com/get_claim/ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E
+
+This produces a json object where `claims` provides a list of available GAS claims and `total_claim` provides the total amount of GAS available to claim. These claims are denominated in units of GAS * 100000000 to support the format required by the network protocol. So you can divide these numbers by 100000000 to get the number of GAS the account would actually receive.
+
+```json
+{
+  "claims": [
+    {
+      "claim": 235456,
+      "end": 306327,
+      "index": 0,
+      "start": 276895,
+      "txid": "67a18d71c04772ac3ab92dbc7936fa0a3422fda8631ecae4e4a3d5cc1f108e8e",
+      "value": 1
+    },
+    {
+      "claim": 235352,
+      "end": 306327,
+      "index": 0,
+      "start": 276908,
+      "txid": "da3d195562dc7e131c4653c323c3368fdb6d41bab038e7d8546be7235aa69ec3",
+      "value": 1
+    },
+    {
+      "claim": 234976,
+      "end": 306327,
+      "index": 0,
+      "start": 276955,
+      "txid": "48f8241f41a1dabf55c8b367193bd770703595ef78b5a29d78d962c8a1638d1e",
+      "value": 1
+    },
+    {
+      "claim": 234952,
+      "end": 306327,
+      "index": 0,
+      "start": 276958,
+      "txid": "2190525f51297cf0fe2c92bd820ac9b663d6b59265b12c001263dd329abc555b",
+      "value": 1
+    },
+    {
+      "claim": 234856,
+      "end": 306327,
+      "index": 0,
+      "start": 276970,
+      "txid": "fe950deef57bc7e32b213e125fdc175a0d0c8a9b1761d43afb9adaa0e6808c48",
+      "value": 1
+    }
+  ],
+  "total_claim": 1175592
+}
+```
+
 ### Transaction History
 
-Current block explorers such as [antchain.org](http://antchain.org) and the current Node APIs only provide information about *unspent transactions* associated with an address. To claim GAS, light wallets need access to more than just unspent transactions! 
+Current block explorers such as [antchain.org](http://antchain.org) and the current Node APIs only provide information about *unspent transactions* associated with an address. To claim GAS, light wallets need access to more than just unspent transactions!
 
 Use `https://neo.herokuapp.com/transaction_history/{address}` to get full transaction history for an address:
 
