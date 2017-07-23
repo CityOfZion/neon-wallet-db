@@ -39,6 +39,24 @@ def get_claimed_txids(txs):
             claimed_ids[tx_claimed["txid"]] = tx
     return claimed_ids
 
+def balance_for_transaction(address, tx):
+    neo_out, neo_in = 0, 0
+    gas_out, gas_in = 0.0, 0.0
+    for tx_info in tx['vin_verbose']:
+        if tx_info['address'] == address:
+            if tx_info['asset'] == ANS_ID:
+                neo_out += int(tx_info['value'])
+            if tx_info['asset'] == ANC_ID:
+                gas_out += float(tx_info['value'])
+    for tx_info in tx['vout']:
+        if tx_info['address'] == address:
+            if tx_info['asset'] == ANS_ID:
+                neo_in += int(tx_info['value'])
+            if tx_info['asset'] == ANC_ID:
+                gas_in += float(tx_info['value'])
+    print("{} - {}".format(neo_in, neo_out))
+    return {"txid": tx['txid'], "block_index":tx["block_index"], "NEO": neo_in - neo_out, "GAS": gas_in - gas_out}
+
 # walk over "vout" transactions to collect those that match desired address
 def info_received_transaction(address, tx):
     out = {"txid": tx["txid"]}
@@ -46,6 +64,7 @@ def info_received_transaction(address, tx):
     index_neo, index_gas = None, None
     for i,obj in enumerate(tx["vout"]):
         if obj["address"] == address:
+            print(obj["value"])
             if obj["asset"] == ANS_ID:
                 neo_tx = int(obj["value"])
                 index_neo = i
@@ -99,6 +118,18 @@ def transaction_history(address):
                              "address":address,
                              "receiver": receiver,
                              "sender": sender })
+    return jsonify(transactions)
+
+# return changes in balance over time
+@application.route("/balance_history/<address>")
+def balance_history(address):
+    transactions = transaction_db.find({"type":"ContractTransaction", "$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})
+    transactions = db2json({ "name":"transaction_history",
+                             "address":address,
+                             "history": [balance_for_transaction(address, x) for x in transactions]})
     return jsonify(transactions)
 
 # get current block height
