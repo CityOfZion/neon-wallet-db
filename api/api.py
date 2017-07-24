@@ -54,7 +54,6 @@ def balance_for_transaction(address, tx):
                 neo_in += int(tx_info['value'])
             if tx_info['asset'] == ANC_ID:
                 gas_in += float(tx_info['value'])
-    print("{} - {}".format(neo_in, neo_out))
     return {"txid": tx['txid'], "block_index":tx["block_index"], "NEO": neo_in - neo_out, "GAS": gas_in - gas_out}
 
 # walk over "vout" transactions to collect those that match desired address
@@ -64,7 +63,6 @@ def info_received_transaction(address, tx):
     index_neo, index_gas = None, None
     for i,obj in enumerate(tx["vout"]):
         if obj["address"] == address:
-            print(obj["value"])
             if obj["asset"] == ANS_ID:
                 neo_tx = int(obj["value"])
                 index_neo = i
@@ -126,7 +124,7 @@ def balance_history(address):
     transactions = transaction_db.find({"type":"ContractTransaction", "$or":[
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
-    ]})
+    ]}).sort("block_index", -1)
     transactions = db2json({ "name":"transaction_history",
                              "address":address,
                              "history": [balance_for_transaction(address, x) for x in transactions]})
