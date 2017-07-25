@@ -28,8 +28,11 @@ def checkSeeds():
     seeds = []
     for seed in SEED_LIST:
         test_rpc = seed + ":" + str(port)
-        data = getBlockCount(test_rpc)
-        seeds.append({"url": test_rpc, "block_height": int(data["result"])})
+        try:
+            data = getBlockCount(test_rpc)
+            seeds.append({"url": test_rpc, "status": True, "block_height": int(data["result"])})
+        except:
+            seeds.append({"url": test_rpc, "status": False, "block_height": None})
     blockchain_db['meta'].update_one({"name": "node_status"}, {"$set": {"nodes": seeds}}, upsert=True)
 
 # get the latest block count and store last block in the database
