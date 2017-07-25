@@ -64,5 +64,3 @@ def storeLatestBlockInDB():
     currBlock = getBlockCount()["result"]
     # height - 1 = current block
     storeBlockInDB(currBlock-1)
-
-checkSeeds()
