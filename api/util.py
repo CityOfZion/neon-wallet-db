@@ -1,6 +1,10 @@
 ANS_ID = "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"
 ANC_ID = "602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"
 
+SEED_LIST = ["http://seed{}.antshares.org".format(x) for x in [1,2,3,4,5,8]]
+MAINNET_PORT = 10332
+TESTNET_PORT = 20332
+
 GENERATION_AMOUNT = [8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 GENERATION_LENGTH = 22
 DECREMENT_INTERVAL = 2000000

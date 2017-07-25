@@ -16,6 +16,7 @@ q = Queue(connection=redis_db)
 
 transaction_db = db['transactions']
 blockchain_db = db['blockchain']
+meta_db = db['meta']
 
 symbol_dict = {ANS_ID: "NEO", ANC_ID: "GAS"}
 
@@ -107,6 +108,12 @@ def is_valid_claim(tx, address, spent_ids, claim_ids):
     # if tx["vin_verbose"][0]["address"] != address:
     #     return False
     return tx['txid'] in spent_ids and not tx['txid'] in claim_ids and "NEO" in info_received_transaction(address, tx)
+
+# return node status
+@application.route("/nodes")
+def nodes():
+    nodes = meta_db.find_one({"name": "node_status"})["nodes"]
+    return jsonify(nodes)
 
 # return all transactions associated with an address (sending to or sent from)
 @application.route("/transaction_history/<address>")

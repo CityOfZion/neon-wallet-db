@@ -4,12 +4,14 @@ import sys
 import os
 from rq import Queue
 from .db import db as blockchain_db
+from .util import SEED_LIST, MAINNET_PORT, TESTNET_PORT
 
 nodeAPI = os.environ.get('NODEAPI')
 appName = os.environ.get('APPNAME')
+net = os.environ.get('NET')
 
 # helper for making node RPC request
-def rpcRequest(method, params):
+def rpcRequest(method, params, nodeAPI=nodeAPI):
     return requests.post(nodeAPI, json={"jsonrpc": "2.0", "method": method, "params": params, "id": 0}).json()
 
 # get a block with the specified index from the node
@@ -18,8 +20,17 @@ def getBlock(index):
     return rpcRequest("getblock", [index,1])
 
 # get the current block height from the node
-def getBlockCount():
-    return rpcRequest("getblockcount", [])
+def getBlockCount(nodeAPI=nodeAPI):
+    return rpcRequest("getblockcount", [], nodeAPI)
+
+def checkSeeds():
+    port = MAINNET_PORT if net == "MainNet" else TESTNET_PORT
+    seeds = []
+    for seed in SEED_LIST:
+        test_rpc = seed + ":" + str(port)
+        data = getBlockCount(test_rpc)
+        seeds.append({"url": test_rpc, "block_height": int(data["result"])})
+    blockchain_db['meta'].update_one({"name": "node_status"}, {"$set": {"nodes": seeds}}, upsert=True)
 
 # get the latest block count and store last block in the database
 def storeBlockInDB(block_index):
@@ -50,3 +61,5 @@ def storeLatestBlockInDB():
     currBlock = getBlockCount()["result"]
     # height - 1 = current block
     storeBlockInDB(currBlock-1)
+
+checkSeeds()

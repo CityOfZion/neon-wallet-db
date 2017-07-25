@@ -1,7 +1,7 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from rq import Queue
 from api import redis_db as conn
-from api.blockchain import storeLatestBlockInDB, getBlockCount, blockchain_db, storeBlockInDB
+from api.blockchain import storeLatestBlockInDB, getBlockCount, blockchain_db, storeBlockInDB, checkSeeds
 
 q = Queue(connection=conn)
 
@@ -11,6 +11,11 @@ sched = BlockingScheduler()
 @sched.scheduled_job('interval', seconds=5)
 def pollNode():
     q.enqueue(storeLatestBlockInDB)
+
+# check for the latest block every 5 seconds
+@sched.scheduled_job('interval', seconds=5)
+def pollNode():
+    q.enqueue(checkSeeds)
 
 # intermittantly check for any blocks we missed by polling
 @sched.scheduled_job('interval', minutes=1)
