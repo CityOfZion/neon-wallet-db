@@ -13,7 +13,7 @@ def pollNode():
     q.enqueue(storeLatestBlockInDB)
 
 # check for the latest block every 5 seconds
-@sched.scheduled_job('interval', seconds=5)
+@sched.scheduled_job('interval', seconds=30)
 def pollNode():
     q.enqueue(checkSeeds)
 
