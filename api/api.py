@@ -118,7 +118,7 @@ def nodes():
 # return node status
 @application.route("/sys_fee/<block_index>")
 def sysfee(block_index):
-    fees = [float(x["sys_fee"]) for x in transaction_db.find({"$and":[{"sys_fee": {"$ne": "0"}}, {"block_index": {"$lt": int(block_index)}}]})]
+    fees = [float(x["sys_fee"]) for x in transaction_db.find({"$and":[{"sys_fee": {"$gt": 0}}, {"block_index": {"$lt": int(block_index)}}]})]
     fee = sum(fees)
     return jsonify({"fee": int(fee)})
 
