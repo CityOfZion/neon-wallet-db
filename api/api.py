@@ -115,12 +115,17 @@ def nodes():
     nodes = meta_db.find_one({"name": "node_status"})["nodes"]
     return jsonify(nodes)
 
+def compute_sys_fee(block_index):
+    fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
+            {"sys_fee": {"$gt": 0}},
+            {"block_index": {"$lt": block_index}}]})]
+    return int(sum(fees))
+
 # return node status
 @application.route("/sys_fee/<block_index>")
 def sysfee(block_index):
-    fees = [float(x["sys_fee"]) for x in transaction_db.find({"$and":[{"sys_fee": {"$gt": 0}}, {"block_index": {"$lt": int(block_index)}}]})]
-    fee = sum(fees)
-    return jsonify({"fee": int(fee)})
+    sys_fee = compute_sys_fee(int(block_index))
+    return jsonify({"fee": sys_fee})
 
 # return all transactions associated with an address (sending to or sent from)
 @application.route("/transaction_history/<address>")
@@ -190,6 +195,7 @@ def get_claim(address):
         obj["index"] = info["NEO"]["index"]
         when_spent = spent_ids_neo[tx["txid"]]
         obj["end"] = when_spent["block_index"]
+        obj["sysfee"] = compute_sys_fee(obj["end"]) - compute_sys_fee(obj["start"])
         obj["claim"] = calculate_bonus([obj])
         block_diffs.append(obj)
     total = sum([x["claim"] for x in block_diffs])

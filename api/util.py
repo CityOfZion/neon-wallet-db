@@ -32,5 +32,6 @@ def calculate_bonus(claims):
                 ustart += 1
                 istart = 0
             amount += (iend - istart) * GENERATION_AMOUNT[ustart]
+        amount += claim["sysfee"]
         amount_claimed += int(claim["value"]) * amount
     return amount_claimed
