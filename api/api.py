@@ -115,6 +115,13 @@ def nodes():
     nodes = meta_db.find_one({"name": "node_status"})["nodes"]
     return jsonify(nodes)
 
+# return node status
+@application.route("/sys_fee/<block_index>")
+def sysfee(block_index):
+    fees = [float(x["sys_fee"]) for x in transaction_db.find({"$and":[{"sys_fee": {"$ne": "0"}}, {"block_index": {"$lt": int(block_index)}}]})]
+    fee = sum(fees)
+    return jsonify({"fee": int(fee)})
+
 # return all transactions associated with an address (sending to or sent from)
 @application.route("/transaction_history/<address>")
 def transaction_history(address):
