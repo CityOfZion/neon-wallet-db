@@ -12,6 +12,8 @@ from .util import ANS_ID, ANC_ID, calculate_bonus
 
 application = Flask(__name__)
 
+NET = os.environ.get('NET')
+
 q = Queue(connection=redis_db)
 
 transaction_db = db['transactions']
@@ -113,7 +115,7 @@ def is_valid_claim(tx, address, spent_ids, claim_ids):
 @application.route("/nodes")
 def nodes():
     nodes = meta_db.find_one({"name": "node_status"})["nodes"]
-    return jsonify(nodes)
+    return jsonify({"net": NET, "nodes": nodes})
 
 def compute_sys_fee(block_index):
     fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
@@ -125,7 +127,7 @@ def compute_sys_fee(block_index):
 @application.route("/sys_fee/<block_index>")
 def sysfee(block_index):
     sys_fee = compute_sys_fee(int(block_index))
-    return jsonify({"fee": sys_fee})
+    return jsonify({"net": NET, "fee": sys_fee})
 
 # return changes in balance over time
 @application.route("/balance_history/<address>")
@@ -134,7 +136,8 @@ def balance_history(address):
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
     ]}).sort("block_index", -1)
-    transactions = db2json({ "name":"transaction_history",
+    transactions = db2json({ "net": NET,
+                             "name":"transaction_history",
                              "address":address,
                              "history": [balance_for_transaction(address, x) for x in transactions]})
     return jsonify(transactions)
@@ -143,12 +146,12 @@ def balance_history(address):
 @application.route("/block_height")
 def block_height():
     height = [x for x in blockchain_db.find().sort("index", -1).limit(1)][0]["index"]
-    return jsonify({"block_height": height})
+    return jsonify({"net": NET, "block_height": height})
 
 # get transaction data from the DB
 @application.route("/get_transaction/<txid>")
 def get_transaction(txid):
-    return jsonify(db2json(transaction_db.find_one({"txid": txid})))
+    return jsonify({**db2json(transaction_db.find_one({"txid": txid})), "net": NET} )
 
 def collect_txids(txs):
     store = {"NEO": {}, "GAS": {}}
@@ -172,6 +175,8 @@ def get_balance(address):
     unspent = {k:{k_:v_ for k_,v_ in received[k].items() if (not k_ in sent[k])} for k in ["NEO", "GAS"]}
     totals = {k:sum([v_["value"] for k_,v_ in unspent[k].items()]) for k in ["NEO", "GAS"]}
     return jsonify({
+        "net": NET,
+        "address": address,
         "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
@@ -200,7 +205,12 @@ def get_claim(address):
         obj["claim"] = calculate_bonus([obj])
         block_diffs.append(obj)
     total = sum([x["claim"] for x in block_diffs])
-    return jsonify({"total_claim": calculate_bonus(block_diffs), "claims": block_diffs, "past_claims": [k[0] for k,v in claimed_neo.items()]})
+    return jsonify({
+        "net": NET,
+        "address": address,
+        "total_claim": calculate_bonus(block_diffs),
+        "claims": block_diffs,
+        "past_claims": [k[0] for k,v in claimed_neo.items()]})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
