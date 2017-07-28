@@ -132,7 +132,7 @@ def sysfee(block_index):
 # return changes in balance over time
 @application.route("/balance_history/<address>")
 def balance_history(address):
-    transactions = transaction_db.find({"type":"ContractTransaction", "$or":[
+    transactions = transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
     ]}).sort("block_index", -1)
