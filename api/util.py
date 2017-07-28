@@ -16,7 +16,7 @@ def calculate_bonus(claims):
         start_height = int(claim["start"])
         end_height = int(claim["end"])
         amount = 0
-        ustart = int(start_height / end_height)
+        ustart = int(start_height / DECREMENT_INTERVAL)
         if ustart < GENERATION_LENGTH:
             istart = start_height % DECREMENT_INTERVAL
             uend = int(end_height / DECREMENT_INTERVAL)
