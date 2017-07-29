@@ -72,6 +72,7 @@ def storeBlockTransactions(block):
                     input_transaction_data[-1]['txid'] = vin['txid']
                 except:
                     print("failed on transaction lookup")
+                    print(vin['txid'])
                     return False
             t['vin_verbose'] = input_transaction_data
         blockchain_db['transactions'].update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
