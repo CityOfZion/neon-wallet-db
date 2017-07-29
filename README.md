@@ -1,6 +1,6 @@
 # Neon Light Wallet Database API
 
-This code runs a database for [Neon](https://github.com/CityOfZion/neon-wallet) that mirrors the NEO blockchain and serves several APIs that don't exist anywhere else (for example, an API to get the full transaction history associated with an address).
+This code runs a database for [Neon](https://github.com/CityOfZion/neon-wallet) that mirrors the NEO blockchain and serves several APIs that don't exist anywhere else (for example, an API to get claims and the full transaction history associated with an address).
 
 ### STATUS: MainNet and TestNet are both fully synced and auto-updating.
 
@@ -64,6 +64,62 @@ This will produce:
     ]
   },
   "address": "AdWDaCmhPmxgksr2iTVuGcLcncSouV6XGv",
+  "net": "TestNet"
+}
+```
+
+### Transaction history
+
+Get a record of how an account balance has changed over time across all transactions: `http://testnet-api.neonwallet.com/v1/address/balance_history/{address}`
+
+For example:
+
+    curl http://testnet-api.neonwallet.com/v1/address/balance_history/ALpwWoxKLwbfCTkRpK2iXrXpaMHgWGcrDV
+
+This produces:
+
+```
+{
+  "address": "ALpwWoxKLwbfCTkRpK2iXrXpaMHgWGcrDV",
+  "history": [
+    {
+      "GAS": 0.0,
+      "NEO": 5,
+      "block_index": 336090,
+      "txid": "b7c998aabe80533b80d70218b6349f82c9f359bc291bc74b17169f1c4e8d2353"
+    },
+    {
+      "GAS": 0.0,
+      "NEO": 1,
+      "block_index": 336076,
+      "txid": "0cb30929530fa4b941f809b1f16e87124d22695fab9e339414812a06aa8b6867"
+    },
+    {
+      "GAS": 0.0,
+      "NEO": -2,
+      "block_index": 336070,
+      "txid": "84835bedd663672de4ad94950cbe51670a83d16cc996f011f704967a0d8ef14d"
+    },
+    {
+      "GAS": 0.00366,
+      "NEO": 0,
+      "block_index": 336016,
+      "txid": "ded12a239c828b6849606ca7f4f3a31b1048dec6bfc0da803374bcea68c7a1b0"
+    },
+    {
+      "GAS": 0.0,
+      "NEO": 0,
+      "block_index": 336014,
+      "txid": "0cde0c3ca9c7f8fe58193aca4f72be603c6422254e3e2e8edaeaab99ca018ba5"
+    },
+    ...,
+    {
+      "GAS": 10000.0,
+      "NEO": 0,
+      "block_index": 285873,
+      "txid": "4787b4d5f02765b5d81c3b381e591aab6ea190b561ba4d89ab64c794c3d946f9"
+    }
+  ],
   "net": "TestNet"
 }
 ```
