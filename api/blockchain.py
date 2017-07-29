@@ -20,7 +20,9 @@ def getBlock(index, nodeAPI=nodeAPI):
     return rpcRequest("getblock", [index,1], nodeAPI)
 
 # get the current block height from the node
-def getBlockCount(nodeAPI=nodeAPI):
+def getBlockCount(nodeAPI=False):
+    if nodeAPI == False:
+        nodeAPI = get_highest_node()
     return rpcRequest("getblockcount", [], nodeAPI)
 
 def checkSeeds():
