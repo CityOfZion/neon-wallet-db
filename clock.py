@@ -35,6 +35,8 @@ def syncBlockchain():
             stopTrust = True
         if not stopTrust:
             newLastTrusted = i
+    print("newLastTrusted", newLastTrusted)
     blockchain_db['meta'].update_one({"name":"lastTrustedBlock"}, {"$set": {"value": newLastTrusted}}, upsert=True)
+    print("done")
 
 sched.start()
