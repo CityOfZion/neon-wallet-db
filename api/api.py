@@ -114,7 +114,7 @@ def is_valid_claim(tx, address, spent_ids, claim_ids):
     return tx['txid'] in spent_ids and not tx['txid'] in claim_ids and len(info_received_transaction(address, tx)["NEO"]) > 0
 
 # return node status
-@application.route("/nodes")
+@application.route("/v1/network/nodes")
 def nodes():
     nodes = meta_db.find_one({"name": "node_status"})["nodes"]
     return jsonify({"net": NET, "nodes": nodes})
@@ -126,13 +126,13 @@ def compute_sys_fee(block_index):
     return int(sum(fees))
 
 # return node status
-@application.route("/sys_fee/<block_index>")
+@application.route("/v1/block/sys_fee/<block_index>")
 def sysfee(block_index):
     sys_fee = compute_sys_fee(int(block_index))
     return jsonify({"net": NET, "fee": sys_fee})
 
 # return changes in balance over time
-@application.route("/balance_history/<address>")
+@application.route("/v1/address/balance_history/<address>")
 def balance_history(address):
     transactions = transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
@@ -145,13 +145,13 @@ def balance_history(address):
     return jsonify(transactions)
 
 # get current block height
-@application.route("/block_height")
+@application.route("/v1/block/height")
 def block_height():
     height = [x for x in blockchain_db.find().sort("index", -1).limit(1)][0]["index"]
     return jsonify({"net": NET, "block_height": height})
 
 # get transaction data from the DB
-@application.route("/get_transaction/<txid>")
+@application.route("/v1/transaction/<txid>")
 def get_transaction(txid):
     return jsonify({**db2json(transaction_db.find_one({"txid": txid})), "net": NET} )
 
@@ -164,7 +164,7 @@ def collect_txids(txs):
     return store
 
 # get balance and unspent assets
-@application.route("/balance/<address>")
+@application.route("/v1/address/balance/<address>")
 def get_balance(address):
     transactions = [t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
@@ -185,7 +185,7 @@ def get_balance(address):
                  "unspent": [v for k,v in unspent["GAS"].items()] }})
 
 # get available claims at an address
-@application.route("/get_claim/<address>")
+@application.route("/v1/address/claims/<address>")
 def get_claim(address):
     transactions = {t['txid']:t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
