@@ -8,9 +8,9 @@ q = Queue(connection=conn)
 sched = BlockingScheduler()
 
 # check for the latest block every 5 seconds
-@sched.scheduled_job('interval', seconds=15)
-def pollNode():
-    q.enqueue(storeLatestBlockInDB)
+# @sched.scheduled_job('interval', seconds=15)
+# def pollNode():
+#     q.enqueue(storeLatestBlockInDB)
 
 # check for the latest block every 5 seconds
 @sched.scheduled_job('interval', seconds=30)
@@ -18,7 +18,7 @@ def pollNode():
     q.enqueue(checkSeeds)
 
 # intermittantly check for any blocks we missed by polling
-@sched.scheduled_job('interval', minutes=3)
+@sched.scheduled_job('interval', seconds=15, max_instances=3)
 def syncBlockchain():
     nodeAPI = get_highest_node()
     currBlock = getBlockCount(nodeAPI)["result"]
