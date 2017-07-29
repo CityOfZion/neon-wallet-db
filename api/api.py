@@ -132,7 +132,7 @@ def sysfee(block_index):
     return jsonify({"net": NET, "fee": sys_fee})
 
 # return changes in balance over time
-@application.route("/v1/address/balance_history/<address>")
+@application.route("/v1/address/history/<address>")
 def balance_history(address):
     transactions = transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
