@@ -70,11 +70,11 @@ This will produce:
 
 ### Transaction history
 
-Get a record of how an account balance has changed over time across all transactions: `http://testnet-api.neonwallet.com/v1/address/balance_history/{address}`
+Get a record of how an account balance has changed over time across all transactions: `http://testnet-api.neonwallet.com/v1/address/history/{address}`
 
 For example:
 
-    curl http://testnet-api.neonwallet.com/v1/address/balance_history/ALpwWoxKLwbfCTkRpK2iXrXpaMHgWGcrDV
+    curl http://testnet-api.neonwallet.com/v1/address/history/ALpwWoxKLwbfCTkRpK2iXrXpaMHgWGcrDV
 
 This produces:
 
