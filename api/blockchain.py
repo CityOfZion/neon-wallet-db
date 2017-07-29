@@ -45,6 +45,7 @@ def storeBlockInDB(block_index, nodeAPI=False):
     if not nodeAPI:
         nodeAPI = get_highest_node()
         print("using {}".format(nodeAPI))
+    print("passed using {}".format(nodeAPI))
     data = getBlock(block_index, nodeAPI=nodeAPI)
     block_data = data["result"]
     # do transaction processing first, so that if anything goes wrong we don't update the chain data
