@@ -30,7 +30,7 @@ def checkSeeds():
         test_rpc = seed + ":" + str(port)
         try:
             data = getBlockCount(test_rpc)
-            getBlockCount(int(data["result"])-1)
+            getBlock(int(data["result"])-1, test_rpc)
             seeds.append({"url": test_rpc, "status": True, "block_height": int(data["result"])})
         except:
             seeds.append({"url": test_rpc, "status": False, "block_height": None})
