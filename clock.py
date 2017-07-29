@@ -18,7 +18,7 @@ def pollNode():
     q.enqueue(checkSeeds)
 
 # intermittantly check for any blocks we missed by polling
-@sched.scheduled_job('interval', seconds=30)
+@sched.scheduled_job('interval', minutes=3)
 def syncBlockchain():
     currBlock = getBlockCount()["result"]
     lastTrustedBlock = blockchain_db["meta"].find_one({"name":"lastTrustedBlock"})["value"]
