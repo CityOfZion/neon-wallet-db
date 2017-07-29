@@ -68,6 +68,7 @@ def storeBlockTransactions(block):
             input_transaction_data = []
             for vin in t['vin']:
                 try:
+                    print("trying...")
                     lookup_t = blockchain_db['transactions'].find_one({"txid": vin['txid']})
                     print(lookup_t)
                     input_transaction_data.append(lookup_t['vout'][vin['vout']])
