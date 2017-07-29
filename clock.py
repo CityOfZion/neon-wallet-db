@@ -28,7 +28,7 @@ def syncBlockchain():
     newLastTrusted = lastTrustedBlock
     print("missing", len(laterBlocks))
     stopTrust = False
-    for i in range(lastTrustedBlock-1, currBlock):
+    for i in range(currBlock, lastTrustedBlock-1, -1):
         if not i in hash_set:
             print("repairing {}".format(i))
             q.enqueue(storeBlockInDB, i, nodeAPI)
