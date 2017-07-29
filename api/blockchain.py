@@ -47,10 +47,7 @@ def get_highest_node():
 def storeBlockInDB(block_index, nodeAPI=False):
     if not nodeAPI:
         nodeAPI = get_highest_node()
-        print("using {}".format(nodeAPI))
-    print("passed using {}".format(nodeAPI))
     data = getBlock(block_index, nodeAPI=nodeAPI)
-    print("result {}".format(data))
     block_data = data["result"]
     # do transaction processing first, so that if anything goes wrong we don't update the chain data
     # the chain data is used for the itermittant syncing/correction step
