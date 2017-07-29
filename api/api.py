@@ -7,7 +7,7 @@ from flask import request
 import os
 from .db import db, redis_db
 from rq import Queue
-from .blockchain import storeBlockInDB
+from .blockchain import storeBlockInDB, get_highest_node
 from .util import ANS_ID, ANC_ID, calculate_bonus
 
 application = Flask(__name__)
@@ -118,6 +118,13 @@ def is_valid_claim(tx, address, spent_ids, claim_ids):
 def nodes():
     nodes = meta_db.find_one({"name": "node_status"})["nodes"]
     return jsonify({"net": NET, "nodes": nodes})
+
+# return node status
+@application.route("/v1/network/best_node")
+def highest_node():
+    nodes = meta_db.find_one({"name": "node_status"})["nodes"]
+    highest_node = get_highest_node()
+    return jsonify({"net": NET, "node": highest_node})
 
 def compute_sys_fee(block_index):
     fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
