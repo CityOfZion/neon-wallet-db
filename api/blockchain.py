@@ -16,8 +16,8 @@ def rpcRequest(method, params, nodeAPI=nodeAPI):
 
 # get a block with the specified index from the node
 # second param of 1 indicates verbose, which returns destructured hash
-def getBlock(index):
-    return rpcRequest("getblock", [index,1])
+def getBlock(index, nodeAPI=nodeAPI):
+    return rpcRequest("getblock", [index,1], nodeAPI)
 
 # get the current block height from the node
 def getBlockCount(nodeAPI=nodeAPI):
@@ -35,9 +35,16 @@ def checkSeeds():
             seeds.append({"url": test_rpc, "status": False, "block_height": None})
     blockchain_db['meta'].update_one({"name": "node_status"}, {"$set": {"nodes": seeds}}, upsert=True)
 
+def get_highest_node():
+    nodes_data = blockchain_db['meta'].find_one({"name":"node_status"})["nodes"]
+    return sorted(nodes_data, key=lambda x: x["block_height"], reverse=True)[0]["url"]
+
 # get the latest block count and store last block in the database
-def storeBlockInDB(block_index):
-    data = getBlock(block_index)
+def storeBlockInDB(block_index, nodeAPI=False):
+    if not nodeAPI:
+        nodeAPI = get_highest_node()
+        print("using {}".format(nodeAPI))
+    data = getBlock(block_index, nodeAPI=nodeAPI)
     block_data = data["result"]
     # do transaction processing first, so that if anything goes wrong we don't update the chain data
     # the chain data is used for the itermittant syncing/correction step
@@ -63,6 +70,7 @@ def storeBlockTransactions(block):
         blockchain_db['transactions'].update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
 
 def storeLatestBlockInDB():
-    currBlock = getBlockCount()["result"]
+    nodeAPI = get_highest_node()
+    currBlock = getBlockCount(nodeAPI=nodeAPI)["result"]
     # height - 1 = current block
-    storeBlockInDB(currBlock-1)
+    storeBlockInDB(currBlock-1, nodeAPI)
