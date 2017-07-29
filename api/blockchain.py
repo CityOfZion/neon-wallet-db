@@ -35,9 +35,10 @@ def checkSeeds():
             seeds.append({"url": test_rpc, "status": False, "block_height": None})
     blockchain_db['meta'].update_one({"name": "node_status"}, {"$set": {"nodes": seeds}}, upsert=True)
 
+# get the node with the highest block height
 def get_highest_node():
     nodes_data = blockchain_db['meta'].find_one({"name":"node_status"})["nodes"]
-    return sorted(nodes_data, key=lambda x: x["block_height"], reverse=True)[0]["url"]
+    return sorted([x for x in nodes_data if x["status"]], key=lambda x: x["block_height"], reverse=True)[0]["url"]
 
 # get the latest block count and store last block in the database
 def storeBlockInDB(block_index, nodeAPI=False):
