@@ -24,7 +24,8 @@ def syncBlockchain():
     currBlock = getBlockCount()["result"]
     lastTrustedBlock = blockchain_db["meta"].find_one({"name":"lastTrustedBlock"})["value"]
     laterBlocks = set([block["index"] for block in blockchain_db["blockchain"].find({"index": {"$gt": lastTrustedBlock}})])
-    print("last trusted".format(lastTrustedBlock))
+    print(len(laterBlocks))
+    print("last trusted {}".format(lastTrustedBlock))
     hash_set = {x:x for x in laterBlocks}
     newLastTrusted = lastTrustedBlock
     stopTrust = False
