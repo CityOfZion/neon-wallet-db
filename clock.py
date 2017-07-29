@@ -8,9 +8,9 @@ q = Queue(connection=conn)
 sched = BlockingScheduler()
 
 # check for the latest block every 5 seconds
-@sched.scheduled_job('interval', seconds=5)
-def pollNode():
-    q.enqueue(storeLatestBlockInDB)
+# @sched.scheduled_job('interval', seconds=5)
+# def pollNode():
+#     q.enqueue(storeLatestBlockInDB)
 
 # check for the latest block every 5 seconds
 @sched.scheduled_job('interval', seconds=30)
@@ -24,6 +24,7 @@ def syncBlockchain():
     currBlock = getBlockCount()["result"]
     lastTrustedBlock = blockchain_db["meta"].find_one({"name":"lastTrustedBlock"})["value"]
     laterBlocks = set([block["index"] for block in blockchain_db["blockchain"].find({"index": {"$gt": lastTrustedBlock}})])
+    print("last trusted".format(lastTrustedBlock))
     hash_set = {x:x for x in laterBlocks}
     newLastTrusted = lastTrustedBlock
     stopTrust = False
