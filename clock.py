@@ -26,8 +26,9 @@ def syncBlockchain():
     laterBlocks = set([block["index"] for block in blockchain_db["blockchain"].find({"index": {"$gt": lastTrustedBlock}})])
     hash_set = {x:x for x in laterBlocks}
     newLastTrusted = lastTrustedBlock
+    print("missing", len(laterBlocks))
     stopTrust = False
-    for i in range(lastTrustedBlock+1, currBlock):
+    for i in range(lastTrustedBlock-1, currBlock):
         if not i in hash_set:
             print("repairing {}".format(i))
             q.enqueue(storeBlockInDB, i, nodeAPI)
