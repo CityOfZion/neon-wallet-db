@@ -47,12 +47,15 @@ def get_highest_node():
 def storeBlockInDB(block_index, nodeAPI=False):
     if not nodeAPI:
         nodeAPI = get_highest_node()
+    print("using {}".format(nodeAPI))
     data = getBlock(block_index, nodeAPI=nodeAPI)
     block_data = data["result"]
     # do transaction processing first, so that if anything goes wrong we don't update the chain data
     # the chain data is used for the itermittant syncing/correction step
     if storeBlockTransactions(block_data):
         blockchain_db['blockchain'].update_one({"index": block_data["index"]}, {"$set": block_data}, upsert=True)
+        return True
+    return False 
 
 # store all the transactions in a block in the database
 # if the transactions already exist, they will be updated
