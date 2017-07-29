@@ -51,8 +51,8 @@ def storeBlockInDB(block_index, nodeAPI=False):
     block_data = data["result"]
     # do transaction processing first, so that if anything goes wrong we don't update the chain data
     # the chain data is used for the itermittant syncing/correction step
-    storeBlockTransactions(block_data)
-    blockchain_db['blockchain'].update_one({"index": block_data["index"]}, {"$set": block_data}, upsert=True)
+    if storeBlockTransactions(block_data):
+        blockchain_db['blockchain'].update_one({"index": block_data["index"]}, {"$set": block_data}, upsert=True)
 
 # store all the transactions in a block in the database
 # if the transactions already exist, they will be updated
@@ -67,10 +67,15 @@ def storeBlockTransactions(block):
         if t['type'] == 'ContractTransaction':
             input_transaction_data = []
             for vin in t['vin']:
-                input_transaction_data.append(blockchain_db['transactions'].find_one({"txid": vin['txid']})['vout'][vin['vout']])
-                input_transaction_data[-1]['txid'] = vin['txid']
+                try:
+                    input_transaction_data.append(blockchain_db['transactions'].find_one({"txid": vin['txid']})['vout'][vin['vout']])
+                    input_transaction_data[-1]['txid'] = vin['txid']
+                except:
+                    print("failed on transaction lookup")
+                    return False
             t['vin_verbose'] = input_transaction_data
         blockchain_db['transactions'].update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
+    return True
 
 def storeLatestBlockInDB():
     nodeAPI = get_highest_node()
