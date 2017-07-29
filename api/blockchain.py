@@ -74,5 +74,6 @@ def storeLatestBlockInDB():
     nodeAPI = get_highest_node()
     print("updating latest block with {}".format(nodeAPI))
     currBlock = getBlockCount(nodeAPI=nodeAPI)["result"]
+    print("current block {}".format(currBlock))
     # height - 1 = current block
     storeBlockInDB(currBlock-1, nodeAPI)
