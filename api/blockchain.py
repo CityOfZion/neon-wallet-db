@@ -5,6 +5,7 @@ import os
 from rq import Queue
 from .db import db as blockchain_db
 from .util import MAINNET_SEEDS, TESTNET_SEEDS
+import time
 
 nodeAPI = os.environ.get('NODEAPI')
 appName = os.environ.get('APPNAME')
@@ -31,11 +32,13 @@ def checkSeeds():
     for test_rpc in seed_list:
         print(test_rpc)
         try:
+            start = time.time()
             data = getBlockCount(test_rpc)
             getBlock(int(data["result"])-1, test_rpc)
-            seeds.append({"url": test_rpc, "status": True, "block_height": int(data["result"])})
+            elapsed = time.time() - start
+            seeds.append({"url": test_rpc, "status": True, "block_height": int(data["result"]), "time": elapsed })
         except:
-            seeds.append({"url": test_rpc, "status": False, "block_height": None})
+            seeds.append({"url": test_rpc, "status": False, "block_height": None, "time": None})
             continue
         print(seeds[-1])
     blockchain_db['meta'].update_one({"name": "node_status"}, {"$set": {"nodes": seeds}}, upsert=True)
