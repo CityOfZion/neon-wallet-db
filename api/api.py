@@ -4,6 +4,7 @@ from bson import json_util
 import json
 from pymongo import MongoClient
 from flask import request
+from flask_cors import CORS, cross_origin
 import os
 from .db import db, redis_db
 from rq import Queue
@@ -11,6 +12,7 @@ from .blockchain import storeBlockInDB, get_highest_node
 from .util import ANS_ID, ANC_ID, calculate_bonus
 
 application = Flask(__name__)
+CORS(application)
 
 NET = os.environ.get('NET')
 
