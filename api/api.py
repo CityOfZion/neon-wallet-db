@@ -134,6 +134,12 @@ def compute_sys_fee(block_index):
             {"block_index": {"$lt": block_index}}]})]
     return int(sum(fees))
 
+def compute_net_fee(block_index):
+    fees = [float(x["net_fee"]) for x in transaction_db.find({ "$and":[
+            {"net_fee": {"$gt": 0}},
+            {"block_index": {"$lt": block_index}}]})]
+    return int(sum(fees))
+
 # return node status
 @application.route("/v1/block/sys_fee/<block_index>")
 def sysfee(block_index):
@@ -193,6 +199,15 @@ def get_balance(address):
         "GAS": { "balance": totals["GAS"],
                  "unspent": [v for k,v in unspent["GAS"].items()] }})
 
+def filter_claimed_for_other_address(claims):
+    out_claims = []
+    for claim in claims.keys():
+        if not transaction_db.find_one({"type":"ClaimTransaction", "$and": [
+            {"claims": {"$elemMatch": {"txid": claim[0]}}}, {"claims": {"$elemMatch": {"vout": claim[1]}}}
+            ]}):
+            out_claims.append(claims[claim])
+    return out_claims
+
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
 def get_claim(address):
@@ -204,7 +219,8 @@ def get_claim(address):
     sent_neo = collect_txids(info_sent)["NEO"]
     past_claims = get_past_claims(address)
     claimed_neo = get_claimed_txids(past_claims)
-    valid_claims = [v for k,v in sent_neo.items() if not k in claimed_neo]
+    valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
+    valid_claims = filter_claimed_for_other_address(valid_claims)
     block_diffs = []
     for tx in valid_claims:
         obj = {"txid": tx["txid"]}
