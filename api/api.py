@@ -50,21 +50,30 @@ def get_claimed_txids(txs):
 def balance_for_transaction(address, tx):
     neo_out, neo_in = 0, 0
     gas_out, gas_in = 0.0, 0.0
+    neo_sent, gas_sent = False, False
     if "vin_verbose" in tx:
         for tx_info in tx['vin_verbose']:
             if tx_info['address'] == address:
                 if tx_info['asset'] == ANS_ID:
                     neo_out += int(tx_info['value'])
+                    neo_sent = True
                 if tx_info['asset'] == ANC_ID:
                     gas_out += float(tx_info['value'])
+                    gas_sent = True
     if "vout" in tx:
         for tx_info in tx['vout']:
             if tx_info['address'] == address:
                 if tx_info['asset'] == ANS_ID:
                     neo_in += int(tx_info['value'])
+                    neo_sent = True
                 if tx_info['asset'] == ANC_ID:
                     gas_in += float(tx_info['value'])
-    return {"txid": tx['txid'], "block_index":tx["block_index"], "NEO": neo_in - neo_out, "GAS": gas_in - gas_out}
+                    gas_sent = True
+    return {"txid": tx['txid'], "block_index":tx["block_index"],
+        "NEO": neo_in - neo_out,
+        "GAS": gas_in - gas_out,
+        "neo_sent": neo_sent,
+        "gas_sent": gas_sent}
 
 # walk over "vout" transactions to collect those that match desired address
 def info_received_transaction(address, tx):
