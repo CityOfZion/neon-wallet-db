@@ -10,6 +10,7 @@ from .db import db, redis_db
 from rq import Queue
 from .blockchain import storeBlockInDB, get_highest_node
 from .util import ANS_ID, ANC_ID, calculate_bonus
+import random
 
 application = Flask(__name__)
 CORS(application)
@@ -21,6 +22,7 @@ q = Queue(connection=redis_db)
 transaction_db = db['transactions']
 blockchain_db = db['blockchain']
 meta_db = db['meta']
+logs_db = db['logs']
 
 symbol_dict = {ANS_ID: "NEO", ANC_ID: "GAS"}
 
@@ -191,6 +193,12 @@ def get_balance(address):
     received = collect_txids(info_received)
     unspent = {k:{k_:v_ for k_,v_ in received[k].items() if (not k_ in sent[k])} for k in ["NEO", "GAS"]}
     totals = {k:sum([v_["value"] for k_,v_ in unspent[k].items()]) for k in ["NEO", "GAS"]}
+    if random.randint(1,10) == 1:
+        logs_db.update_one({"address": address}, {"$set": {
+            "address": address,
+            "NEO": totals["NEO"],
+            "GAS": totals["GAS"]
+        }}, upsert=True)
     return jsonify({
         "net": NET,
         "address": address,
