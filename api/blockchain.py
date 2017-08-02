@@ -73,7 +73,7 @@ def storeBlockTransactions(block):
         t['block_index'] = block["index"]
         t['sys_fee'] = float(t['sys_fee'])
         t['net_fee'] = float(t['net_fee'])
-        if t['type'] == 'ContractTransaction':
+        if 'vin' in t: #t['type'] == 'ContractTransaction':
             input_transaction_data = []
             for vin in t['vin']:
                 try:
