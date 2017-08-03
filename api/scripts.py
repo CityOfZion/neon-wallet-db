@@ -42,5 +42,5 @@ def update_vin_transactions():
                 print(vin['txid'])
         t['vin_verbose'] = input_transaction_data
         if i % 100 == 0:
-            print(i)
+            print(i, t["block_index"])
         transaction_db.update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
