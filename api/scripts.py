@@ -78,7 +78,9 @@ def add_fees():
     print("computed sys fees")
     write_blocks_data = []
     counter = 0
-    for index in range(0, max_block+1):
+    # for index in range(0, max_block+1):
+    for block in blockchain_db.find({ "sys_fee" : { "$exists" : False } }):
+        index = block["index"]
         write_blocks_data.append({"index": index, "sys_fee": sys_fees[index], "net_fee": net_fees[index]})
         if counter % 5000 == 0:
             print(sys_fees[index], net_fees[index])
@@ -86,3 +88,4 @@ def add_fees():
             write_batch_fee(write_blocks_data)
             write_blocks_data = []
         counter += 1
+    write_batch_fee(write_blocks_data)

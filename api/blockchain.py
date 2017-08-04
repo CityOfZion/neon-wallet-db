@@ -60,7 +60,8 @@ def storeBlockInDB(block_index, nodeAPI=False):
     # the chain data is used for the itermittant syncing/correction step
     success, total_sys, total_net = storeBlockTransactions(block_data)
     if success:
-        lastBlock = blockchain_db['blockchain'].find_one({"index": block_data["index"]})
+        lastBlock = blockchain_db['blockchain'].find_one({"index": block_data["index"]-1})
+        print(lastBlock)
         if lastBlock and 'sys_fee' in lastBlock and 'net_fee' in lastBlock:
             block_data['sys_fee'] = lastBlock['sys_fee'] + total_sys
             block_data['net_fee'] = lastBlock['net_fee'] + total_net
