@@ -199,6 +199,17 @@ def collect_txids(txs):
                 store[k][(tx_["txid"], tx_["index"])] = tx_
     return store
 
+def filter_gas(gas_txs, max_gas):
+    out = {}
+    total = 0.0
+    for k,v in gas_txs.items():
+        if total + v["value"] > max_gas:
+            continue
+        else:
+            total += v["value"]
+            out[k] = v
+    return out
+
 # get balance and unspent assets
 @application.route("/v1/address/balance/<address>")
 def get_balance(address):
@@ -224,7 +235,7 @@ def get_balance(address):
         "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
-                 "unspent": [v for k,v in unspent["GAS"].items()] }})
+                 "unspent": [v for k,v in filter_gas(unspent["GAS"], 5000).items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
