@@ -139,18 +139,26 @@ def highest_node():
     highest_node = get_highest_node()
     return jsonify({"net": NET, "node": highest_node})
 
+# def compute_sys_fee(block_index):
+#     fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
+#             {"sys_fee": {"$gt": 0}},
+#             {"block_index": {"$lte": block_index}}]})]
+#     return int(sum(fees))
+
 def compute_sys_fee(block_index):
-    fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
-            {"sys_fee": {"$gt": 0}},
-            {"block_index": {"$lte": block_index}}]})]
-    return int(sum(fees))
+    return int(blockchain_db.find_one({"index": block_index})["sys_fee"])
+
+# def compute_sys_fee_diff(index1, index2):
+#     fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
+#             {"sys_fee": {"$gt": 0}},
+#             {"block_index": {"$gte": index1}},
+#             {"block_index": {"$lte": index2}}]})]
+#     return int(sum(fees))
 
 def compute_sys_fee_diff(index1, index2):
-    fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
-            {"sys_fee": {"$gt": 0}},
-            {"block_index": {"$gte": index1}},
-            {"block_index": {"$lte": index2}}]})]
-    return int(sum(fees))
+    index1 = int(blockchain_db.find_one({"index": index1})["sys_fee"])
+    index2 = int(blockchain_db.find_one({"index": index2})["sys_fee"])
+    return index2 - index1
 
 def compute_net_fee(block_index):
     fees = [float(x["net_fee"]) for x in transaction_db.find({ "$and":[
@@ -235,7 +243,7 @@ def get_balance(address):
         "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
-                 "unspent": [v for k,v in filter_gas(unspent["GAS"], 5000).items()] }})
+                 "unspent": [v for k,v in unspent["GAS"].items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
