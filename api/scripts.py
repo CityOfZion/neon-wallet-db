@@ -47,26 +47,42 @@ def update_vin_transactions():
         transaction_db.update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
 
 def write_batch_fee(batch):
-    bulk_write = block_db.initialize_unordered_bulk_op()
+    bulk_write = blockchain_db.initialize_unordered_bulk_op()
     for info in batch:
         bulk_write.find({"index": info["index"]}).update({"$set": {"sys_fee":info["sys_fee"], "net_fee":info["net_fee"]}})
     bulk_write.execute()
 
 def add_fees():
+    max_block = blockchain_db.find().sort("index", -1)[0]["index"]+1
     sys_fees = defaultdict(int)
     net_fees = defaultdict(int)
-    for i,t in enumerate(transaction_db.find()):
+    total_sys = 0.0
+    total_net = 0.0
+    transactions = defaultdict(list)
+    print("gathering transactions...")
+    for i,t in enumerate(transaction_db.find({"$or":[{"sys_fee": {"$gt": 0}}, {"net_fee": {"$gt": 0}}]})):
+        transactions[t["block_index"]].append(t)
         if i % 5000 == 0:
             print(i)
-        sys_fees[t['block_index']] += t['sys_fee']
-        net_fees[t['block_index']] += t['net_fee']
+    print("calculating fees...")
+    for block_i in range(0, max_block + 1):
+        for t in transactions[block_i]:
+            total_sys += t['sys_fee']
+            total_net += t['net_fee']
+            if t['sys_fee'] < 0:
+                print("negative sysfee!!")
+            if t['net_fee'] < 0:
+                print("negative netfee!!")
+        sys_fees[block_i] = total_sys
+        net_fees[block_i] = total_net
     print("computed sys fees")
     write_blocks_data = []
     counter = 0
-    for block in blockchain_db.find():
-        write_blocks_data.append({"index": block["index"], "sys_fee": sys_fees[block["index"]], "net_fees": net_fees[block["index"]]})
+    for index in range(0, max_block+1):
+        write_blocks_data.append({"index": index, "sys_fee": sys_fees[index], "net_fee": net_fees[index]})
         if counter % 5000 == 0:
+            print(sys_fees[index], net_fees[index])
             print(counter)
-            #write_batch_fee(write_blocks)
+            write_batch_fee(write_blocks_data)
             write_blocks_data = []
         counter += 1

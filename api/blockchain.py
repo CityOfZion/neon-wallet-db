@@ -58,7 +58,12 @@ def storeBlockInDB(block_index, nodeAPI=False):
     block_data = data["result"]
     # do transaction processing first, so that if anything goes wrong we don't update the chain data
     # the chain data is used for the itermittant syncing/correction step
-    if storeBlockTransactions(block_data):
+    success, total_sys, total_net = storeBlockTransactions(block_data)
+    if success:
+        lastBlock = blockchain_db['blockchain'].find_one({"index": block_data["index"]})
+        if lastBlock and 'sys_fee' in lastBlock and 'net_fee' in lastBlock:
+            block_data['sys_fee'] = lastBlock['sys_fee'] + total_sys
+            block_data['net_fee'] = lastBlock['net_fee'] + total_net
         blockchain_db['blockchain'].update_one({"index": block_data["index"]}, {"$set": block_data}, upsert=True)
         return True
     return False
@@ -69,10 +74,14 @@ def storeBlockInDB(block_index, nodeAPI=False):
 def storeBlockTransactions(block):
     transactions = block['tx']
     out = []
+    total_sys = 0.0
+    total_net = 0.0
     for t in transactions:
         t['block_index'] = block["index"]
         t['sys_fee'] = float(t['sys_fee'])
         t['net_fee'] = float(t['net_fee'])
+        total_sys += t['sys_fee']
+        total_net += t['net_fee']
         if 'vin' in t: #t['type'] == 'ContractTransaction':
             input_transaction_data = []
             for vin in t['vin']:
@@ -89,7 +98,7 @@ def storeBlockTransactions(block):
                     return False
             t['vin_verbose'] = input_transaction_data
         blockchain_db['transactions'].update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
-    return True
+    return True, total_sys, total_net
 
 def storeLatestBlockInDB():
     nodeAPI = get_highest_node()
