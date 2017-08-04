@@ -235,7 +235,7 @@ def get_balance(address):
         "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
-                 "unspent": [v for k,v in filter_gas(unspent["GAS"], 5000).items()] }})
+                 "unspent": [v for k,v in unspent["GAS"].items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
@@ -257,7 +257,7 @@ def compute_claims(claims, transactions, end_block=False):
             obj["end"] = transactions[tx['sending_id']]["block_index"]
         else:
             obj["end"] = end_block
-        obj["sysfee"] = compute_sys_fee_diff(obj["end"], obj["start"])
+        obj["sysfee"] = compute_sys_fee_diff(obj["start"], obj["end"])
         obj["claim"] = calculate_bonus([obj])
         block_diffs.append(obj)
     return block_diffs
