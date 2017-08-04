@@ -142,7 +142,14 @@ def highest_node():
 def compute_sys_fee(block_index):
     fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
             {"sys_fee": {"$gt": 0}},
-            {"block_index": {"$lt": block_index}}]})]
+            {"block_index": {"$lte": block_index}}]})]
+    return int(sum(fees))
+
+def compute_sys_fee_diff(index1, index2):
+    fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
+            {"sys_fee": {"$gt": 0}},
+            {"block_index": {"$gte": index1}},
+            {"block_index": {"$lte": index2}}]})]
     return int(sum(fees))
 
 def compute_net_fee(block_index):
@@ -170,10 +177,13 @@ def balance_history(address):
                              "history": [balance_for_transaction(address, x) for x in transactions]})
     return jsonify(transactions)
 
+def get_db_height():
+    return [x for x in blockchain_db.find().sort("index", -1).limit(1)][0]["index"]
+
 # get current block height
 @application.route("/v1/block/height")
 def block_height():
-    height = [x for x in blockchain_db.find().sort("index", -1).limit(1)][0]["index"]
+    height = get_db_height()
     return jsonify({"net": NET, "block_height": height})
 
 # get transaction data from the DB
@@ -225,6 +235,22 @@ def filter_claimed_for_other_address(claims):
             out_claims.append(claims[claim])
     return out_claims
 
+def compute_claims(claims, transactions, end_block=False):
+    block_diffs = []
+    for tx in claims:
+        obj = {"txid": tx["txid"]}
+        obj["start"] = transactions[tx['txid']]["block_index"]
+        obj["value"] = tx["value"]
+        obj["index"] = tx["index"]
+        if not end_block:
+            obj["end"] = transactions[tx['sending_id']]["block_index"]
+        else:
+            obj["end"] = end_block
+        obj["sysfee"] = compute_sys_fee_diff(obj["end"], obj["start"])
+        obj["claim"] = calculate_bonus([obj])
+        block_diffs.append(obj)
+    return block_diffs
+
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
 def get_claim(address):
@@ -232,27 +258,29 @@ def get_claim(address):
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
     ]})}
+    # get sent neo info
     info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
     sent_neo = collect_txids(info_sent)["NEO"]
+    # get received neo info
+    info_received = [info_received_transaction(address, t) for t in transactions.values()]
+    received_neo = collect_txids(info_received)["NEO"]
+    unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
+    # get claim info
     past_claims = get_past_claims(address)
     claimed_neo = get_claimed_txids(past_claims)
     valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
     valid_claims = filter_claimed_for_other_address(valid_claims)
-    block_diffs = []
-    for tx in valid_claims:
-        obj = {"txid": tx["txid"]}
-        obj["start"] = transactions[tx['txid']]["block_index"]
-        obj["value"] = tx["value"]
-        obj["index"] = tx["index"]
-        obj["end"] = transactions[tx['sending_id']]["block_index"]
-        obj["sysfee"] = compute_sys_fee(obj["end"]) - compute_sys_fee(obj["start"])
-        obj["claim"] = calculate_bonus([obj])
-        block_diffs.append(obj)
+    block_diffs = compute_claims(valid_claims, transactions)
     total = sum([x["claim"] for x in block_diffs])
+    # now do for unspent
+    height = get_db_height()
+    unspent_diffs = compute_claims([v for k,v in unspent_neo.items()], transactions, height)
+    unspent_claim_total = sum([x["claim"] for x in block_diffs])
     return jsonify({
         "net": NET,
         "address": address,
         "total_claim": calculate_bonus(block_diffs),
+        "total_unspent_claim": calculate_bonus(unspent_diffs),
         "claims": block_diffs,
         "past_claims": [k[0] for k,v in claimed_neo.items()]})
 

@@ -1,4 +1,5 @@
 from .db import db
+from collections import defaultdict
 
 transaction_db = db['transactions']
 blockchain_db = db['blockchain']
@@ -44,3 +45,28 @@ def update_vin_transactions():
         if i % 100 == 0:
             print(i, t["block_index"])
         transaction_db.update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
+
+def write_batch_fee(batch):
+    bulk_write = block_db.initialize_unordered_bulk_op()
+    for info in batch:
+        bulk_write.find({"index": info["index"]}).update({"$set": {"sys_fee":info["sys_fee"], "net_fee":info["net_fee"]}})
+    bulk_write.execute()
+
+def add_fees():
+    sys_fees = defaultdict(int)
+    net_fees = defaultdict(int)
+    for i,t in enumerate(transaction_db.find()):
+        if i % 5000 == 0:
+            print(i)
+        sys_fees[t['block_index']] += t['sys_fee']
+        net_fees[t['block_index']] += t['net_fee']
+    print("computed sys fees")
+    write_blocks_data = []
+    counter = 0
+    for block in blockchain_db.find():
+        write_blocks_data.append({"index": block["index"], "sys_fee": sys_fees[block["index"]], "net_fees": net_fees[block["index"]]})
+        if counter % 5000 == 0:
+            print(counter)
+            #write_batch_fee(write_blocks)
+            write_blocks_data = []
+        counter += 1
