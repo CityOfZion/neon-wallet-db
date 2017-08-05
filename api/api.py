@@ -178,7 +178,7 @@ def balance_history(address):
     transactions = transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
-    ]}).sort("block_index", -1)
+    ]}).sort("block_index", -1).limit(25)
     transactions = db2json({ "net": NET,
                              "name":"transaction_history",
                              "address":address,
@@ -243,7 +243,7 @@ def get_balance(address):
         "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
-                 "unspent": [v for k,v in unspent["GAS"].items()] }})
+                 "unspent": [v for k,v in filter_gas(unspent["GAS"],5000).items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
