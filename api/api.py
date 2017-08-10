@@ -4,6 +4,7 @@ from bson import json_util
 import json
 from pymongo import MongoClient
 from flask import request
+from flask.ext.cache import Cache
 from flask_cors import CORS, cross_origin
 import os
 from .db import db, redis_db
@@ -25,6 +26,27 @@ meta_db = db['meta']
 logs_db = db['logs']
 
 symbol_dict = {ANS_ID: "NEO", ANC_ID: "GAS"}
+
+# Constants
+USE_MEMCACHE = True
+
+## Cache
+cache_config = {}
+cache_config['CACHE_TYPE'] = 'simple'
+
+### Memcache
+
+if USE_MEMCACHE:
+    username = os.environ.get('MEMCACHIER_USERNAME') or os.environ.get('MEMCACHE_USERNAME')
+    password = os.environ.get('MEMCACHIER_PASSWORD') or os.environ.get('MEMCACHE_PASSWORD')
+    servers = os.environ.get('MEMCACHIER_SERVERS') or os.environ.get('MEMCACHE_SERVERS')
+    if username and password and servers:
+        servers = servers.split(';')
+        cache_config['CACHE_TYPE'] = 'flask_cache_backends.bmemcached'
+        cache_config['CACHE_MEMCACHED_USERNAME'] = username
+        cache_config['CACHE_MEMCACHED_PASSWORD'] = password
+        cache_config['CACHE_MEMCACHED_SERVERS'] = servers
+cache = Cache(application, config=cache_config)
 
 def db2json(db_obj):
     return json.loads(json.dumps(db_obj, indent=4, default=json_util.default))
@@ -168,12 +190,14 @@ def compute_net_fee(block_index):
 
 # return node status
 @application.route("/v1/block/sys_fee/<block_index>")
+@cache.cached(timeout=500)
 def sysfee(block_index):
     sys_fee = compute_sys_fee(int(block_index))
     return jsonify({"net": NET, "fee": sys_fee})
 
 # return changes in balance over time
 @application.route("/v1/address/history/<address>")
+@cache.cached(timeout=10)
 def balance_history(address):
     transactions = transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
@@ -196,6 +220,7 @@ def block_height():
 
 # get transaction data from the DB
 @application.route("/v1/transaction/<txid>")
+@cache.cached(timeout=500)
 def get_transaction(txid):
     return jsonify({**db2json(transaction_db.find_one({"txid": txid})), "net": NET} )
 
@@ -222,6 +247,7 @@ def filter_gas(gas_txs, max_gas, address):
 
 # get balance and unspent assets
 @application.route("/v1/address/balance/<address>")
+@cache.cached(timeout=10)
 def get_balance(address):
     transactions = [t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
@@ -245,7 +271,8 @@ def get_balance(address):
         "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
-                 "unspent": [v for k,v in filter_gas(unspent["GAS"], 5000, address).items()] }})
+                "unspent": [v for k,v in unspent["GAS"].items()] }})
+                #  "unspent": [v for k,v in filter_gas(unspent["GAS"], 5000, address).items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
@@ -274,6 +301,7 @@ def compute_claims(claims, transactions, end_block=False):
 
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
+@cache.cached(timeout=10)
 def get_claim(address):
     transactions = {t['txid']:t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
