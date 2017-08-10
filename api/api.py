@@ -248,7 +248,7 @@ def filter_gas(gas_txs, max_gas, address):
 
 # get balance and unspent assets
 @application.route("/v1/address/balance/<address>")
-@cache.cached(timeout=10)
+@cache.cached(timeout=15)
 def get_balance(address):
     transactions = [t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
@@ -302,7 +302,7 @@ def compute_claims(claims, transactions, end_block=False):
 
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
-@cache.cached(timeout=10)
+@cache.cached(timeout=15)
 def get_claim(address):
     transactions = {t['txid']:t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
