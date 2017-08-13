@@ -162,20 +162,35 @@ def highest_node():
     highest_node = get_highest_node()
     return jsonify({"net": NET, "node": highest_node})
 
+# def compute_sys_fee(block_index):
+#     block_key = "sys_fee_{}".format(block_index)
+#     if cache.get(block_key):
+#         return cache.get(block_key)
+#     else:
+#         fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
+#                 {"sys_fee": {"$gt": 0}},
+#                 {"block_index": {"$lte": block_index}}]})]
+#         total = int(sum(fees))
+#         cache.set(block_key, total, timeout=10000)
+#         return total
+
 def compute_sys_fee(block_index):
     block_key = "sys_fee_{}".format(block_index)
     if cache.get(block_key):
+        print("using cache")
         return cache.get(block_key)
+    query = blockchain_db.find_one({"index": block_index})
+    if query:
+        print("using query")
+        total = int(query["sys_fee"])
     else:
+        print("slowest")
         fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
-                {"sys_fee": {"$gt": 0}},
-                {"block_index": {"$lte": block_index}}]})]
+                        {"sys_fee": {"$gt": 0}},
+                        {"block_index": {"$lte": block_index}}]})]
         total = int(sum(fees))
-        cache.set(block_key, total, timeout=10000)
-        return total
-
-# def compute_sys_fee(block_index):
-#     return int(blockchain_db.find_one({"index": block_index})["sys_fee"])
+    cache.set(block_key, total, timeout=10000)
+    return total
 
 def compute_sys_fee_diff(index1, index2):
     return compute_sys_fee(index2) - compute_sys_fee(index1)

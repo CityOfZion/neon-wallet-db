@@ -6,6 +6,7 @@ from rq import Queue
 from .db import db as blockchain_db
 from .util import MAINNET_SEEDS, TESTNET_SEEDS
 import time
+from .scripts import add_fees
 
 nodeAPI = os.environ.get('NODEAPI')
 appName = os.environ.get('APPNAME')
@@ -108,3 +109,6 @@ def storeLatestBlockInDB():
     print("current block {}".format(currBlock))
     # height - 1 = current block
     storeBlockInDB(currBlock-1, nodeAPI)
+
+def update_sys_fees():
+    add_fees()
