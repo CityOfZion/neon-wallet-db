@@ -363,12 +363,12 @@ def get_claim(address):
     #         "total_claim": 0,
     #         "total_unspent_claim": 0,
     #         "claims": []})
-    # start = time.time()
-    # transactions = {t['txid']:t for t in transaction_db.find({"$or":[
-    #     {"vout":{"$elemMatch":{"address":address}}},
-    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
-    # ]})}
-    # print("to get transactions {}".format(time.time() - start))
+    start = time.time()
+    transactions = {t['txid']:t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})}
+    print("to get transactions {}".format(time.time() - start))
     # # get sent neo info
     # info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
     # sent_neo = collect_txids(info_sent)["NEO"]
