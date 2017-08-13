@@ -13,6 +13,7 @@ from .blockchain import storeBlockInDB, get_highest_node
 from .util import ANS_ID, ANC_ID, calculate_bonus
 import random
 from werkzeug.contrib.cache import MemcachedCache
+import time
 
 application = Flask(__name__)
 CORS(application)
@@ -25,6 +26,7 @@ transaction_db = db['transactions']
 blockchain_db = db['blockchain']
 meta_db = db['meta']
 logs_db = db['logs']
+address_db = db['addresses']
 
 symbol_dict = {ANS_ID: "NEO", ANC_ID: "GAS"}
 
@@ -179,25 +181,29 @@ def compute_sys_fee(block_index):
     if cache.get(block_key):
         print("using cache")
         return cache.get(block_key)
-    query = blockchain_db.find_one({"index": block_index})
-    if query:
-        print("using query")
-        total = int(query["sys_fee"])
-    else:
-        print("slowest")
-        fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
-                        {"sys_fee": {"$gt": 0}},
-                        {"block_index": {"$lte": block_index}}]})]
-        total = int(sum(fees))
+    print(block_index)
+    print("slowest")
+    fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
+                    {"sys_fee": {"$gt": 0}},
+                    {"block_index": {"$lte": block_index}}]})]
+    total = int(sum(fees))
     cache.set(block_key, total, timeout=10000)
     return total
 
 def compute_sys_fee_diff(index1, index2):
-    return compute_sys_fee(index2) - compute_sys_fee(index1)
+#     return compute_sys_fee(index2) - compute_sys_fee(index1)
+    fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
+                {"sys_fee": {"$gt": 0}},
+                {"block_index": {"$gte": index1}},
+                {"block_index": {"$lte": index2}} ]})]
+    total = int(sum(fees))
+    return total
 
 # def compute_sys_fee_diff(index1, index2):
+#     print(index1, index2)
 #     index1 = int(blockchain_db.find_one({"index": index1})["sys_fee"])
 #     index2 = int(blockchain_db.find_one({"index": index2})["sys_fee"])
+#     print(index1, index2)
 #     return index2 - index1
 
 def compute_net_fee(block_index):
@@ -295,9 +301,7 @@ def get_balance(address):
 def filter_claimed_for_other_address(claims):
     out_claims = []
     for claim in claims.keys():
-        if not transaction_db.find_one({"type":"ClaimTransaction", "$and": [
-            {"claims": {"$elemMatch": {"txid": claim[0]}}}, {"claims": {"$elemMatch": {"vout": claim[1]}}}
-            ]}):
+        if not transaction_db.find_one({"type":"ClaimTransaction", "$and": [{"claims": {"$elemMatch": {"txid": claim[0]}}}, {"claims": {"$elemMatch": {"vout": claim[1]}}}]}):
             out_claims.append(claims[claim])
     return out_claims
 
@@ -317,39 +321,56 @@ def compute_claims(claims, transactions, end_block=False):
         block_diffs.append(obj)
     return block_diffs
 
+def get_address_txs(address):
+    query = address_db.find_one({"address": address})
+    if query:
+        return query["txs"]
+    else:
+        transactions = {t['txid']:t for t in transaction_db.find({"$or":[
+            {"vout":{"$elemMatch":{"address":address}}},
+            {"vin_verbose":{"$elemMatch":{"address":address}}}
+        ]})}
+        address_db.update_one({"address": address}, {"$set": {"txs": transactions}}, upsert=True)
+        return transactions
+
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
-@cache.cached(timeout=20)
+# @cache.cached(timeout=0)
 def get_claim(address):
-    # transactions = {t['txid']:t for t in transaction_db.find({"$or":[
-    #     {"vout":{"$elemMatch":{"address":address}}},
-    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
-    # ]}).sort("block_index", -1).limit(30)}
-    # # get sent neo info
-    # info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
-    # sent_neo = collect_txids(info_sent)["NEO"]
-    # # get received neo info
-    # info_received = [info_received_transaction(address, t) for t in transactions.values()]
-    # received_neo = collect_txids(info_received)["NEO"]
-    # unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
-    # # get claim info
-    # past_claims = get_past_claims(address)
-    # claimed_neo = get_claimed_txids(past_claims)
-    # valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
-    # valid_claims = filter_claimed_for_other_address(valid_claims)
-    # block_diffs = compute_claims(valid_claims, transactions)
-    # total = sum([x["claim"] for x in block_diffs])
-    # # now do for unspent
-    # height = get_db_height()
-    # unspent_diffs = compute_claims([v for k,v in unspent_neo.items()], transactions, height)
-    # unspent_claim_total = sum([x["claim"] for x in block_diffs])
+    start = time.time()
+    transactions = {t['txid']:t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})}
+    print("to get transactions {}".format(time.time() - start))
+    # get sent neo info
+    info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
+    sent_neo = collect_txids(info_sent)["NEO"]
+    # get received neo info
+    info_received = [info_received_transaction(address, t) for t in transactions.values()]
+    received_neo = collect_txids(info_received)["NEO"]
+    unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
+    # get claim info
+    past_claims = get_past_claims(address)
+    claimed_neo = get_claimed_txids(past_claims)
+    valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
+    valid_claims = filter_claimed_for_other_address(valid_claims)
+    block_diffs = compute_claims(valid_claims, transactions)
+    total = sum([x["claim"] for x in block_diffs])
+    # now do for unspent
+    height = get_db_height()
+    start = time.time()
+    unspent_diffs = compute_claims([v for k,v in unspent_neo.items()], transactions, height)
+    print("to compute claims: {}".format(time.time() - start))
+    print(unspent_diffs)
+    unspent_claim_total = sum([x["claim"] for x in block_diffs])
+    print(unspent_claim_total)
     return jsonify({
         "net": NET,
         "address": address,
-        "total_claim": 0, #calculate_bonus(block_diffs),
-        "total_unspent_claim": 0,# calculate_bonus(unspent_diffs),
-        "claims": [], #block_diffs,
-        "past_claims": [] })# [k[0] for k,v in claimed_neo.items()]})
+        "total_claim": calculate_bonus(block_diffs),
+        "total_unspent_claim": calculate_bonus(unspent_diffs),
+        "claims": block_diffs})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
