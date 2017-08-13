@@ -335,7 +335,7 @@ def get_address_txs(address):
 
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
-# @cache.cached(timeout=15)
+@cache.cached(timeout=15)
 def get_claim(address):
     # address_info = address_db.find_one({"address":address})
     # # print(address_info)
@@ -394,8 +394,8 @@ def get_claim(address):
     return jsonify({
         "net": NET,
         "address": address,
-        "total_claim": 0, calculate_bonus(block_diffs),
-        "total_unspent_claim": 0, calculate_bonus(unspent_diffs),
+        "total_claim": 0, #calculate_bonus(block_diffs),
+        "total_unspent_claim": 0, #calculate_bonus(unspent_diffs),
         "claims": []})
 
 if __name__ == "__main__":
