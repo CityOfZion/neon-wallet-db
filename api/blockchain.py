@@ -114,55 +114,55 @@ def storeBlockTransactions(block):
                     print(claim['txid'])
             t['claims_verbose'] = claim_transaction_data
         # now do address stuff
-        spent, recieved, claimed = [], [], []
-        if 'vin_verbose' in t:
-            for tx in t["vin_verbose"]:
-                address = blockchain_db['addresses'].find_one({"address": tx["address"]})
-                if address:
-                    spent = address["spent"]
-                if not (tx["txid"], tx["n"]) in {(x["txid"], x["n"]) for x in spent}:
-                    spent.append({
-                        "txid": tx["txid"],
-                        "n": tx["n"],
-                        "value": tx["value"],
-                        "asset": tx["asset"],
-                        "block_index": t["block_index"]
-                    })
-                    blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
-                        "spent": spent
-                    }})
-        if 'vout' in t:
-            for tx in t["vin_verbose"]:
-                address = blockchain_db['addresses'].find_one({"address": tx["address"]})
-                if address:
-                    recieved = address["recieved"]
-                if not (tx["txid"], tx["n"]) in {(x["txid"], x["n"]) for x in recieved}:
-                    recieved.append({
-                        "txid": tx["txid"],
-                        "n": tx["n"],
-                        "value": tx["value"],
-                        "asset": tx["asset"],
-                        "block_index": t["block_index"]
-                    })
-                    blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
-                        "recieved": recieved
-                    }})
-        if 'claims_verbose' in t:
-            for tx in t['claims_verbose']:
-                address = blockchain_db['addresses'].find_one({"address": tx["address"]})
-                if claimed:
-                    claimed = address["claimed"]
-                if not (tx["txid"], tx["n"]) in {(x["txid"], x["n"]) for x in claimed}:
-                    claimed.append({
-                        "txid": tx["txid"],
-                        "n": tx["n"],
-                        "value": tx["value"],
-                        "asset": tx["asset"],
-                        "block_index": t["block_index"]
-                    })
-                    blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
-                        "claimed": claimed
-                    }})
+        # spent, recieved, claimed = [], [], []
+        # if 'vin_verbose' in t:
+        #     for tx in t["vin_verbose"]:
+        #         address = blockchain_db['addresses'].find_one({"address": tx["address"]})
+        #         if address:
+        #             spent = address["spent"]
+        #         if not (tx["txid"], tx["n"]) in {(x["txid"], x["n"]) for x in spent}:
+        #             spent.append({
+        #                 "txid": tx["txid"],
+        #                 "n": tx["n"],
+        #                 "value": tx["value"],
+        #                 "asset": tx["asset"],
+        #                 "block_index": t["block_index"]
+        #             })
+        #             blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
+        #                 "spent": spent
+        #             }})
+        # if 'vout' in t:
+        #     for tx in t["vin_verbose"]:
+        #         address = blockchain_db['addresses'].find_one({"address": tx["address"]})
+        #         if address:
+        #             recieved = address["recieved"]
+        #         if not (tx["txid"], tx["n"]) in {(x["txid"], x["n"]) for x in recieved}:
+        #             recieved.append({
+        #                 "txid": tx["txid"],
+        #                 "n": tx["n"],
+        #                 "value": tx["value"],
+        #                 "asset": tx["asset"],
+        #                 "block_index": t["block_index"]
+        #             })
+        #             blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
+        #                 "recieved": recieved
+        #             }})
+        # if 'claims_verbose' in t:
+        #     for tx in t['claims_verbose']:
+        #         address = blockchain_db['addresses'].find_one({"address": tx["address"]})
+        #         if claimed:
+        #             claimed = address["claimed"]
+        #         if not (tx["txid"], tx["n"]) in {(x["txid"], x["n"]) for x in claimed}:
+        #             claimed.append({
+        #                 "txid": tx["txid"],
+        #                 "n": tx["n"],
+        #                 "value": tx["value"],
+        #                 "asset": tx["asset"],
+        #                 "block_index": t["block_index"]
+        #             })
+        #             blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
+        #                 "claimed": claimed
+        #             }})
         blockchain_db['transactions'].update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
     return True, total_sys, total_net
 

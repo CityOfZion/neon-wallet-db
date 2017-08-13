@@ -337,67 +337,66 @@ def get_address_txs(address):
 @application.route("/v1/address/claims/<address>")
 @cache.cached(timeout=15)
 def get_claim(address):
-    address_info = address_db.find_one({"address":address})
-    # print(address_info)
-    if address_info:
-        sent_neo = [t for t in address_info["spent"] if t["asset"] == ANS_ID]
-        recieved_neo = [t for t in address_info["recieved"] if t["asset"] == ANS_ID]
-        claimed_tx = [t for t in address_info["claimed"]]
-        unspent_neo = [t for t in recieved_neo if not (t["txid"],t["n"]) in {(x["txid"],x["n"]):True for x in sent_neo}]
-        claims = [t for t in sent_neo if not (t["txid"],t["n"]) in {(x["txid"],x["n"]):True for x in claimed_tx} ]
-        print("claims", len(claims))
-        block_diffs = compute_claims(claims, {x["txid"]:x for x in recieved_neo})
-        height = get_db_height()
-        print("unspent", len(unspent_neo))
-        unspent_diffs = compute_claims(unspent_neo, {x["txid"]:x for x in recieved_neo}, height)
-        return jsonify({
-            "net": NET,
-            "address": address,
-            "total_claim": calculate_bonus(block_diffs),
-            "total_unspent_claim": calculate_bonus(unspent_diffs),
-            "claims": block_diffs})
-    else:
-        return jsonify({
-            "net": NET,
-            "address": address,
-            "total_claim": 0,
-            "total_unspent_claim": 0,
-            "claims": []})
-
-    # start = time.time()
-    # transactions = {t['txid']:t for t in transaction_db.find({"$or":[
-    #     {"vout":{"$elemMatch":{"address":address}}},
-    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
-    # ]})}
-    # print("to get transactions {}".format(time.time() - start))
-    # # get sent neo info
-    # info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
-    # sent_neo = collect_txids(info_sent)["NEO"]
-    # # get received neo info
-    # info_received = [info_received_transaction(address, t) for t in transactions.values()]
-    # received_neo = collect_txids(info_received)["NEO"]
-    # unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
-    # # get claim info
-    # past_claims = get_past_claims(address)
-    # claimed_neo = get_claimed_txids(past_claims)
-    # valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
-    # valid_claims = filter_claimed_for_other_address(valid_claims)
-    # block_diffs = compute_claims(valid_claims, transactions)
-    # total = sum([x["claim"] for x in block_diffs])
-    # # now do for unspent
-    # height = get_db_height()
-    # start = time.time()
-    # unspent_diffs = compute_claims([v for k,v in unspent_neo.items()], transactions, height)
-    # print("to compute claims: {}".format(time.time() - start))
-    # print(unspent_diffs)
-    # unspent_claim_total = sum([x["claim"] for x in block_diffs])
-    # print(unspent_claim_total)
-    # return jsonify({
-    #     "net": NET,
-    #     "address": address,
-    #     "total_claim": calculate_bonus(block_diffs),
-    #     "total_unspent_claim": calculate_bonus(unspent_diffs),
-    #     "claims": block_diffs})
+    # address_info = address_db.find_one({"address":address})
+    # # print(address_info)
+    # if address_info:
+    #     sent_neo = [t for t in address_info["spent"] if t["asset"] == ANS_ID]
+    #     recieved_neo = [t for t in address_info["recieved"] if t["asset"] == ANS_ID]
+    #     claimed_tx = [t for t in address_info["claimed"]]
+    #     unspent_neo = [t for t in recieved_neo if not (t["txid"],t["n"]) in {(x["txid"],x["n"]):True for x in sent_neo}]
+    #     claims = [t for t in sent_neo if not (t["txid"],t["n"]) in {(x["txid"],x["n"]):True for x in claimed_tx} ]
+    #     print("claims", len(claims))
+    #     block_diffs = compute_claims(claims, {x["txid"]:x for x in recieved_neo})
+    #     height = get_db_height()
+    #     print("unspent", len(unspent_neo))
+    #     unspent_diffs = compute_claims(unspent_neo, {x["txid"]:x for x in recieved_neo}, height)
+    #     return jsonify({
+    #         "net": NET,
+    #         "address": address,
+    #         "total_claim": calculate_bonus(block_diffs),
+    #         "total_unspent_claim": calculate_bonus(unspent_diffs),
+    #         "claims": block_diffs})
+    # else:
+    #     return jsonify({
+    #         "net": NET,
+    #         "address": address,
+    #         "total_claim": 0,
+    #         "total_unspent_claim": 0,
+    #         "claims": []})
+    start = time.time()
+    transactions = {t['txid']:t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})}
+    print("to get transactions {}".format(time.time() - start))
+    # get sent neo info
+    info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
+    sent_neo = collect_txids(info_sent)["NEO"]
+    # get received neo info
+    info_received = [info_received_transaction(address, t) for t in transactions.values()]
+    received_neo = collect_txids(info_received)["NEO"]
+    unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
+    # get claim info
+    past_claims = get_past_claims(address)
+    claimed_neo = get_claimed_txids(past_claims)
+    valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
+    valid_claims = filter_claimed_for_other_address(valid_claims)
+    block_diffs = compute_claims(valid_claims, transactions)
+    total = sum([x["claim"] for x in block_diffs])
+    # now do for unspent
+    height = get_db_height()
+    start = time.time()
+    unspent_diffs = compute_claims([v for k,v in unspent_neo.items()], transactions, height)
+    print("to compute claims: {}".format(time.time() - start))
+    print(unspent_diffs)
+    unspent_claim_total = sum([x["claim"] for x in block_diffs])
+    print(unspent_claim_total)
+    return jsonify({
+        "net": NET,
+        "address": address,
+        "total_claim": calculate_bonus(block_diffs),
+        "total_unspent_claim": calculate_bonus(unspent_diffs),
+        "claims": block_diffs})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
