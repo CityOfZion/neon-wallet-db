@@ -324,7 +324,7 @@ def get_claim(address):
     transactions = {t['txid']:t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
-    ]})}
+    ]}).sort("block_index", -1).limit(100)}
     # get sent neo info
     info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
     sent_neo = collect_txids(info_sent)["NEO"]
