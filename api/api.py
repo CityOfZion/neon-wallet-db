@@ -369,13 +369,13 @@ def get_claim(address):
         {"vin_verbose":{"$elemMatch":{"address":address}}}
     ]})}
     print("to get transactions {}".format(time.time() - start))
-    # # get sent neo info
-    # info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
-    # sent_neo = collect_txids(info_sent)["NEO"]
-    # # get received neo info
-    # info_received = [info_received_transaction(address, t) for t in transactions.values()]
-    # received_neo = collect_txids(info_received)["NEO"]
-    # unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
+    # get sent neo info
+    info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
+    sent_neo = collect_txids(info_sent)["NEO"]
+    # get received neo info
+    info_received = [info_received_transaction(address, t) for t in transactions.values()]
+    received_neo = collect_txids(info_received)["NEO"]
+    unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
     # # get claim info
     # past_claims = get_past_claims(address)
     # claimed_neo = get_claimed_txids(past_claims)
