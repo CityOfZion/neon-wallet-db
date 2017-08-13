@@ -377,10 +377,10 @@ def get_claim(address):
     received_neo = collect_txids(info_received)["NEO"]
     unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
     # # get claim info
-    # past_claims = get_past_claims(address)
-    # claimed_neo = get_claimed_txids(past_claims)
-    # valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
-    # valid_claims = filter_claimed_for_other_address(valid_claims)
+    past_claims = get_past_claims(address)
+    claimed_neo = get_claimed_txids(past_claims)
+    valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
+    valid_claims = filter_claimed_for_other_address(valid_claims)
     # block_diffs = compute_claims(valid_claims, transactions)
     # total = sum([x["claim"] for x in block_diffs])
     # # now do for unspent
