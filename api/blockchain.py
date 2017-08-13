@@ -113,6 +113,36 @@ def storeBlockTransactions(block):
                     print("failed on transaction lookup")
                     print(claim['txid'])
             t['claims_verbose'] = claim_transaction_data
+        if 'vin_verbose' in t:
+            for tx in t["vin_verbose"]:
+                blockchain_db['addresses'].update_one({"address": tx["address"]}, {"$push": {
+                    "spent": {
+                        "txid": tx["txid"],
+                        "n": tx["n"],
+                        "value": tx["value"],
+                        "asset": tx["asset"]
+                    }
+                }})
+        if 'vout' in t:
+            for tx in t["vout"]:
+                blockchain_db['addresses'].update_one({"address": tx["address"]}, {"$push": {
+                    "recieved": {
+                        "txid": tx["txid"],
+                        "n": tx["n"],
+                        "value": tx["value"],
+                        "asset": tx["asset"]
+                    }
+                }})
+        if 'claims_verbose' in t:
+            for tx in t['claims_verbose']:
+                blockchain_db['addresses'].update_one({"address": tx["address"]}, {"$push": {
+                    "claimed": {
+                        "txid": tx["txid"],
+                        "n": tx["n"],
+                        "value": tx["value"],
+                        "asset": tx["asset"]
+                    }
+                }})
         blockchain_db['transactions'].update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
     return True, total_sys, total_net
 

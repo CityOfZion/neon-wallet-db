@@ -4,6 +4,8 @@ from collections import defaultdict
 transaction_db = db['transactions']
 blockchain_db = db['blockchain']
 meta_db = db['meta']
+address_db = db['addresses']
+
 
 def write_batch(batch):
     bulk_write = transaction_db.initialize_unordered_bulk_op()
@@ -109,24 +111,41 @@ def add_fees():
 
 def compute_accounts():
     address_data = defaultdict(lambda: defaultdict(list))
-    for t in transaction_db.find():
-        for tx in t["vin_verbose"]:
-            address_data[tx["address"]]["spent"].append({
-                "txid": tx["txid"],
-                "n": tx["n"],
-                "value": tx["value"],
-                "asset": tx["asset"]
-            })
-        for tx in t["vout"]:
-            address_data[tx["address"]]["recieved"].append({
-                "txid": t["txid"],
-                "n": tx["vout"],
-                "value": tx["value"],
-                "asset": tx["asset"]
-            })
-        for tx in t['claims_verbose']:
-            address_data[tx["address"]]["recieved"].append({
-                "txid": tx["txid"],
-                "n": tx["vout"],
-                "value": tx["value"],
-            })
+    last_block_index = None
+    for i,t in enumerate(transaction_db.find({"block_index": {"$gt": 400128}})):
+        if i % 1000 == 0:
+            print("getting transactions... {}".format(i))
+        if 'vin_verbose' in t:
+            for tx in t["vin_verbose"]:
+                address_data[tx["address"]]["spent"].append({
+                    "txid": tx["txid"],
+                    "n": tx["n"],
+                    "value": tx["value"],
+                    "asset": tx["asset"]
+                })
+        if 'vout' in t:
+            for tx in t["vout"]:
+                address_data[tx["address"]]["recieved"].append({
+                    "txid": t["txid"],
+                    "n": tx["n"],
+                    "value": tx["value"],
+                    "asset": tx["asset"]
+                })
+        if 'claims_verbose' in t:
+            for tx in t['claims_verbose']:
+                address_data[tx["address"]]["claimed"].append({
+                    "txid": tx["txid"],
+                    "n": tx["n"],
+                    "value": tx["value"],
+                })
+        last_block_index = t["block_index"]
+    print(last_block_index)
+    for k,v in address_data.items():
+        address_db.update_one({"address": k}, {
+            "$set": {
+                "spent": v["spent"],
+                "recieved": v["recieved"],
+                "claimed": v["claimed"]
+            }
+        }, upsert = True)
+    print(len(address_data.keys()))
