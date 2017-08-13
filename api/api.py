@@ -313,7 +313,7 @@ def compute_claims(claims, transactions, end_block=False):
         obj["value"] = tx["value"]
         obj["index"] = tx["index"]
         if not end_block:
-            obj["end"] = tx["block_index"]
+            obj["end"] = transactions[tx['sending_id']]["block_index"]
         else:
             obj["end"] = end_block
         obj["sysfee"] = compute_sys_fee_diff(obj["start"], obj["end"])
