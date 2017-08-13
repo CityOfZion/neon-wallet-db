@@ -337,6 +337,13 @@ def get_address_txs(address):
 @application.route("/v1/address/claims/<address>")
 # @cache.cached(timeout=15)
 def get_claim(address):
+    address_info = address_db.find({"address":address})
+    sent_neo = [t for t in address_info["sent"] if t["asset"] == ANS_ID]
+    recieved_neo = [t for t in address_info["recieved"] if t["asset"] == ANS_ID]
+    claimed_tx = [t for t in address_info["claimed"] if t["asset"] == ANS_ID]
+    unspent_neo = [t for t in recieved_neo if not t["txid"] in {(x["txid"],x["n"]):True for x in sent_neo}]
+    claims = [t for t in sent_neo if not t["txid"] in {(x["txid"],x["n"]):True for x in claimed_tx} ]
+    block_diffs = compute_claims(claims)
     start = time.time()
     transactions = {t['txid']:t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},

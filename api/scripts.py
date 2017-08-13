@@ -112,7 +112,7 @@ def add_fees():
 def compute_accounts():
     address_data = defaultdict(lambda: defaultdict(list))
     last_block_index = None
-    for i,t in enumerate(transaction_db.find({"block_index": {"$gt": 400128}})):
+    for i,t in enumerate(transaction_db.find()):
         if i % 1000 == 0:
             print("getting transactions... {}".format(i))
         if 'vin_verbose' in t:
@@ -121,7 +121,8 @@ def compute_accounts():
                     "txid": tx["txid"],
                     "n": tx["n"],
                     "value": tx["value"],
-                    "asset": tx["asset"]
+                    "asset": tx["asset"],
+                    "block_index": t["block_index"]
                 })
         if 'vout' in t:
             for tx in t["vout"]:
@@ -129,7 +130,8 @@ def compute_accounts():
                     "txid": t["txid"],
                     "n": tx["n"],
                     "value": tx["value"],
-                    "asset": tx["asset"]
+                    "asset": tx["asset"],
+                    "block_index": t["block_index"]
                 })
         if 'claims_verbose' in t:
             for tx in t['claims_verbose']:
@@ -137,6 +139,7 @@ def compute_accounts():
                     "txid": tx["txid"],
                     "n": tx["n"],
                     "value": tx["value"],
+                    "block_index": t["block_index"]
                 })
         last_block_index = t["block_index"]
     print(last_block_index)
