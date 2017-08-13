@@ -128,7 +128,7 @@ def storeBlockTransactions(block):
                         "asset": tx["asset"],
                         "block_index": t["block_index"]
                     })
-                    blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
+                    blockchain_db['addresses'].update_one({"address": tx["address"]}, {"$set": {
                         "spent": spent
                     }})
         if 'vout' in t:
@@ -144,7 +144,7 @@ def storeBlockTransactions(block):
                         "asset": tx["asset"],
                         "block_index": t["block_index"]
                     })
-                    blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
+                    blockchain_db['addresses'].update_one({"address": tx["address"]}, {"$set": {
                         "recieved": recieved
                     }})
         if 'claims_verbose' in t:
@@ -160,7 +160,7 @@ def storeBlockTransactions(block):
                         "asset": tx["asset"],
                         "block_index": t["block_index"]
                     })
-                    blockchain_db['addresses'].update_one({"address": t["address"]}, {"$set": {
+                    blockchain_db['addresses'].update_one({"address": tx["address"]}, {"$set": {
                         "claimed": claimed
                     }})
         blockchain_db['transactions'].update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
