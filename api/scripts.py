@@ -46,6 +46,23 @@ def update_vin_transactions():
             print(i, t["block_index"])
         transaction_db.update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
 
+def update_claim_transactions():
+    claim_transactions = transaction_db.find({"type":"ClaimTransaction", "$and": [{"claims": {"$ne": []}}, {"claims_verbose":{"$exists": False}}]}).sort("block_index", 1)
+    for i,t in enumerate(claim_transactions):
+        input_transaction_data = []
+        for claim in t["claims"]:
+            try:
+                lookup_t = transaction_db.find_one({"txid": claim['txid']})
+                input_transaction_data.append(lookup_t['vout'][claim['vout']])
+                input_transaction_data[-1]['txid'] = claim['txid']
+            except:
+                print("failed on transaction lookup")
+                print(claim['txid'])
+        t['claims_verbose'] = input_transaction_data
+        if i % 100 == 0:
+            print(i, t["block_index"])
+        transaction_db.update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
+
 def write_batch_fee(batch):
     bulk_write = blockchain_db.initialize_unordered_bulk_op()
     for info in batch:
@@ -89,3 +106,27 @@ def add_fees():
             write_blocks_data = []
         counter += 1
     write_batch_fee(write_blocks_data)
+
+def compute_accounts():
+    address_data = defaultdict(lambda: defaultdict(list))
+    for t in transaction_db.find():
+        for tx in t["vin_verbose"]:
+            address_data[tx["address"]]["spent"].append({
+                "txid": tx["txid"],
+                "n": tx["n"],
+                "value": tx["value"],
+                "asset": tx["asset"]
+            })
+        for tx in t["vout"]:
+            address_data[tx["address"]]["recieved"].append({
+                "txid": t["txid"],
+                "n": tx["vout"],
+                "value": tx["value"],
+                "asset": tx["asset"]
+            })
+        for tx in t['claims_verbose']:
+            address_data[tx["address"]]["recieved"].append({
+                "txid": tx["txid"],
+                "n": tx["vout"],
+                "value": tx["value"],
+            })
