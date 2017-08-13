@@ -1,3 +1,3 @@
-web: gunicorn api --timeout 5
+web: gunicorn api
 worker: python worker.py
 clock: python clock.py

@@ -90,13 +90,13 @@ def storeBlockTransactions(block):
                 try:
                     print("trying...")
                     lookup_t = blockchain_db['transactions'].find_one({"txid": vin['txid']})
-                    print(lookup_t)
+                    # print(lookup_t)
                     input_transaction_data.append(lookup_t['vout'][vin['vout']])
-                    print(input_transaction_data)
+                    # print(input_transaction_data)
                     input_transaction_data[-1]['txid'] = vin['txid']
                 except:
                     print("failed on transaction lookup")
-                    print(vin['txid'])
+                    # print(vin['txid'])
                     return False
             t['vin_verbose'] = input_transaction_data
         if 'claims' in t:
@@ -105,9 +105,9 @@ def storeBlockTransactions(block):
                 print("claim", claim)
                 try:
                     lookup_t = blockchain_db['transactions'].find_one({"txid": claim['txid']})
-                    print("lookup", lookup_t)
+                    # print("lookup", lookup_t)
                     claim_transaction_data.append(lookup_t['vout'][claim['vout']])
-                    print(claim_transaction_data)
+                    # print(claim_transaction_data)
                     claim_transaction_data[-1]['txid'] = claim['txid']
                 except:
                     print("failed on transaction lookup")
