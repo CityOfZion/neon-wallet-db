@@ -311,7 +311,7 @@ def compute_claims(claims, transactions, end_block=False):
         obj = {"txid": tx["txid"]}
         obj["start"] = transactions[tx['txid']]["block_index"]
         obj["value"] = tx["value"]
-        obj["index"] = tx["n"]
+        obj["index"] = tx["index"]
         if not end_block:
             obj["end"] = tx["block_index"]
         else:
