@@ -335,7 +335,7 @@ def get_address_txs(address):
 
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
-# @cache.cached(timeout=0)
+@cache.cached(timeout=15)
 def get_claim(address):
     start = time.time()
     transactions = {t['txid']:t for t in transaction_db.find({"$or":[
