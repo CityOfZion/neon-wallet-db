@@ -341,7 +341,7 @@ def get_claim(address):
         "address": address,
         "total_claim": 0,  #calculate_bonus(block_diffs),
         "total_unspent_claim": 0,# calculate_bonus(unspent_diffs),
-        "claims": [] #, block_diffs,
+        "claims": [], #, block_diffs,
         "past_claims": [] }) #[k[0] for k,v in claimed_neo.items()]})
 
 if __name__ == "__main__":
