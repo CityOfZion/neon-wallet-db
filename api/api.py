@@ -335,7 +335,7 @@ def get_address_txs(address):
 
 # get available claims at an address
 @application.route("/v1/address/claims/<address>")
-@cache.cached(timeout=15)
+# @cache.cached(timeout=15)
 def get_claim(address):
     # address_info = address_db.find_one({"address":address})
     # # print(address_info)
