@@ -329,10 +329,10 @@ def get_claim(address):
     return jsonify({
         "net": NET,
         "address": address,
-        "total_claim": calculate_bonus(block_diffs),
-        "total_unspent_claim": calculate_bonus(unspent_diffs),
-        "claims": block_diffs,
-        "past_claims": [k[0] for k,v in claimed_neo.items()]})
+        "total_claim": 0, #calculate_bonus(block_diffs),
+        "total_unspent_claim": 0, #calculate_bonus(unspent_diffs),
+        "claims": [], #block_diffs,
+        "past_claims": [] # [k[0] for k,v in claimed_neo.items()]})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
