@@ -380,7 +380,7 @@ def get_claim(address):
     past_claims = get_past_claims(address)
     claimed_neo = get_claimed_txids(past_claims)
     valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
-    # valid_claims = filter_claimed_for_other_address(valid_claims)
+    valid_claims = filter_claimed_for_other_address(valid_claims)
     block_diffs = compute_claims(valid_claims, transactions)
     total = sum([x["claim"] for x in block_diffs])
     # now do for unspent
