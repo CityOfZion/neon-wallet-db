@@ -302,7 +302,7 @@ def filter_claimed_for_other_address(claims):
     out_claims = []
     for claim in claims.keys():
         tm = time.time()
-        tx = transaction_db.find_one({"claims_keys":"{}_{}".format(claim[0], claim[1])})
+        tx = transaction_db.find_one({"type":"ClaimTransaction", "claims_keys_v1":{"$elemMatch": {"key": "{}_{}".format(claim[0], claim[1])}}})
         print("time {}".format(time.time() - tm))
         if not tx:
             out_claims.append(claims[claim])
