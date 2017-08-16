@@ -301,8 +301,10 @@ def get_balance(address):
 def filter_claimed_for_other_address(claims):
     out_claims = []
     for claim in claims.keys():
-        if not transaction_db.find_one({"type":"ClaimTransaction", "$and": [{"claims": {"$elemMatch": {"txid": claim[0]}}}, {"claims": {"$elemMatch": {"vout": claim[1]}}}]}):
+        tx = transaction_db.find_one({"type":"ClaimTransaction", "claims": {"$elemMatch": {"$and": [{"txid": claim[0]}, {"vout": claim[1]}] }}})
+        if not tx:
             out_claims.append(claims[claim])
+        else:
     return out_claims
 
 def compute_claims(claims, transactions, end_block=False):
