@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, Blueprint
 from flask import jsonify
 from bson import json_util
 import json
@@ -7,49 +7,19 @@ from flask import request
 from flask.ext.cache import Cache
 from flask_cors import CORS, cross_origin
 import os
-from .db import db, redis_db
-from rq import Queue
+from .db import q, transaction_db, blockchain_db, meta_db, logs_db, address_db
 from .blockchain import storeBlockInDB, get_highest_node
 from .util import ANS_ID, ANC_ID, calculate_bonus
 import random
 from werkzeug.contrib.cache import MemcachedCache
 import time
+from .cache import cache
 
-application = Flask(__name__)
-CORS(application)
+api = Blueprint('api',__name__)
 
 NET = os.environ.get('NET')
 
-q = Queue(connection=redis_db)
-
-transaction_db = db['transactions']
-blockchain_db = db['blockchain']
-meta_db = db['meta']
-logs_db = db['logs']
-address_db = db['addresses']
-
 symbol_dict = {ANS_ID: "NEO", ANC_ID: "GAS"}
-
-# Constants
-USE_MEMCACHE = True
-
-## Cache
-cache_config = {}
-cache_config['CACHE_TYPE'] = 'simple'
-
-### Memcache
-
-if USE_MEMCACHE:
-    username = os.environ.get('MEMCACHIER_USERNAME') or os.environ.get('MEMCACHE_USERNAME')
-    password = os.environ.get('MEMCACHIER_PASSWORD') or os.environ.get('MEMCACHE_PASSWORD')
-    servers = os.environ.get('MEMCACHIER_SERVERS') or os.environ.get('MEMCACHE_SERVERS')
-    if username and password and servers:
-        servers = servers.split(';')
-        cache_config['CACHE_TYPE'] = 'flask_cache_backends.bmemcached'
-        cache_config['CACHE_MEMCACHED_USERNAME'] = username
-        cache_config['CACHE_MEMCACHED_PASSWORD'] = password
-        cache_config['CACHE_MEMCACHED_SERVERS'] = servers
-cache = Cache(application, config=cache_config)
 
 def db2json(db_obj):
     return json.loads(json.dumps(db_obj, indent=4, default=json_util.default))
@@ -152,29 +122,17 @@ def is_valid_claim(tx, address, spent_ids, claim_ids):
     return tx['txid'] in spent_ids and not tx['txid'] in claim_ids and len(info_received_transaction(address, tx)["NEO"]) > 0
 
 # return node status
-@application.route("/v1/network/nodes")
+@api.route("/v2/network/nodes")
 def nodes():
     nodes = meta_db.find_one({"name": "node_status"})["nodes"]
     return jsonify({"net": NET, "nodes": nodes})
 
 # return node status
-@application.route("/v1/network/best_node")
+@api.route("/v2/network/best_node")
 def highest_node():
     nodes = meta_db.find_one({"name": "node_status"})["nodes"]
     highest_node = get_highest_node()
     return jsonify({"net": NET, "node": highest_node})
-
-# def compute_sys_fee(block_index):
-#     block_key = "sys_fee_{}".format(block_index)
-#     if cache.get(block_key):
-#         return cache.get(block_key)
-#     else:
-#         fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
-#                 {"sys_fee": {"$gt": 0}},
-#                 {"block_index": {"$lte": block_index}}]})]
-#         total = int(sum(fees))
-#         cache.set(block_key, total, timeout=10000)
-#         return total
 
 def compute_sys_fee(block_index):
     block_key = "sys_fee_{}".format(block_index)
@@ -191,20 +149,12 @@ def compute_sys_fee(block_index):
     return total
 
 def compute_sys_fee_diff(index1, index2):
-#     return compute_sys_fee(index2) - compute_sys_fee(index1)
     fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
                 {"sys_fee": {"$gt": 0}},
                 {"block_index": {"$gte": index1}},
                 {"block_index": {"$lte": index2}} ]})]
     total = int(sum(fees))
     return total
-
-# def compute_sys_fee_diff(index1, index2):
-#     print(index1, index2)
-#     index1 = int(blockchain_db.find_one({"index": index1})["sys_fee"])
-#     index2 = int(blockchain_db.find_one({"index": index2})["sys_fee"])
-#     print(index1, index2)
-#     return index2 - index1
 
 def compute_net_fee(block_index):
     fees = [float(x["net_fee"]) for x in transaction_db.find({ "$and":[
@@ -213,14 +163,14 @@ def compute_net_fee(block_index):
     return int(sum(fees))
 
 # return node status
-@application.route("/v1/block/sys_fee/<block_index>")
+@api.route("/v2/block/sys_fee/<block_index>")
 @cache.cached(timeout=500)
 def sysfee(block_index):
     sys_fee = compute_sys_fee(int(block_index))
     return jsonify({"net": NET, "fee": sys_fee})
 
 # return changes in balance over time
-@application.route("/v1/address/history/<address>")
+@api.route("/v2/address/history/<address>")
 @cache.cached(timeout=15)
 def balance_history(address):
     transactions = transaction_db.find({"$or":[
@@ -237,13 +187,13 @@ def get_db_height():
     return [x for x in blockchain_db.find().sort("index", -1).limit(1)][0]["index"]
 
 # get current block height
-@application.route("/v1/block/height")
+@api.route("/v2/block/height")
 def block_height():
     height = get_db_height()
     return jsonify({"net": NET, "block_height": height})
 
 # get transaction data from the DB
-@application.route("/v1/transaction/<txid>")
+@api.route("/v2/transaction/<txid>")
 @cache.cached(timeout=500)
 def get_transaction(txid):
     return jsonify({**db2json(transaction_db.find_one({"txid": txid})), "net": NET} )
@@ -256,21 +206,8 @@ def collect_txids(txs):
                 store[k][(tx_["txid"], tx_["index"])] = tx_
     return store
 
-def filter_gas(gas_txs, max_gas, address):
-    if address in ["ALxkLkCY1iij3yoZ6XxEHLVQ6ihixJJNcB", "AcQ6FCjJ8EqyKwFUeZ4Ac2pnTg4oHr8UBt"]:
-        return gas_txs
-    out = {}
-    total = 0.0
-    for k,v in gas_txs.items():
-        if total + v["value"] > max_gas:
-            continue
-        else:
-            total += v["value"]
-            out[k] = v
-    return out
-
 # get balance and unspent assets
-@application.route("/v1/address/balance/<address>")
+@api.route("/v2/address/balance/<address>")
 @cache.cached(timeout=15)
 def get_balance(address):
     transactions = [t for t in transaction_db.find({"$or":[
@@ -295,8 +232,7 @@ def get_balance(address):
         "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
-                # "unspent": [v for k,v in unspent["GAS"].items()] }})
-                 "unspent": [v for k,v in filter_gas(unspent["GAS"], 5000, address).items()] }})
+                "unspent": [v for k,v in unspent["GAS"].items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
@@ -337,7 +273,7 @@ def get_address_txs(address):
         return transactions
 
 # get available claims at an address
-@application.route("/v1/address/claims/<address>")
+@api.route("/v2/address/claims/<address>")
 @cache.cached(timeout=15)
 def get_claim(address):
     start = time.time()
@@ -372,6 +308,3 @@ def get_claim(address):
         "total_claim": calculate_bonus(block_diffs),
         "total_unspent_claim": calculate_bonus(unspent_diffs),
         "claims": block_diffs})
-
-if __name__ == "__main__":
-    application.run(host='0.0.0.0')

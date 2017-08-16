@@ -5,7 +5,6 @@ click==6.7
 Flask==0.12.2
 Flask-Cache==0.13.1
 Flask-Cors==3.0.3
-gevent==1.2.2
 greenlet==0.4.12
 gunicorn==19.7.1
 idna==2.5
