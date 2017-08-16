@@ -66,6 +66,21 @@ def update_claim_transactions():
             print(i, t["block_index"])
         transaction_db.update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
 
+def update_claim_key():
+    claim_transactions = transaction_db.find({"type":"ClaimTransaction", "$and": [{"claims": {"$ne": []}}, {"claims_keys":{"$exists": False}}]}).sort("block_index", 1)
+    for i,t in enumerate(claim_transactions):
+        input_transaction_data = []
+        for claim in t["claims"]:
+            try:
+                input_transaction_data.append("{}_{}".format(claim['txid'], claim['vout']))
+            except:
+                print("failed on transaction lookup")
+                print(claim['txid'])
+        t['claims_keys'] = input_transaction_data
+        if i % 100 == 0:
+            print(i, t["block_index"])
+        transaction_db.update_one({"txid": t["txid"]}, {"$set": t}, upsert=True)
+
 def write_batch_fee(batch):
     bulk_write = blockchain_db.initialize_unordered_bulk_op()
     for info in batch:
