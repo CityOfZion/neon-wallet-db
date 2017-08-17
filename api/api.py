@@ -308,3 +308,7 @@ def get_claim(address):
         "total_claim": calculate_bonus(block_diffs),
         "total_unspent_claim": calculate_bonus(unspent_diffs),
         "claims": block_diffs})
+
+@api.route("/v2/version")
+def version():
+    return jsonify({"version":"0.0.4"})
