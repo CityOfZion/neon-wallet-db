@@ -127,5 +127,9 @@ def storeLatestBlockInDB():
     # height - 1 = current block
     storeBlockInDB(currBlock-1, nodeAPI)
 
+def log_event_worker(data):
+    if "type" in data and data["type"] in ["CLAIM", "SEND"]:
+        blockchain_db["events"].insert_one(data)
+
 def update_sys_fees():
     add_fees()

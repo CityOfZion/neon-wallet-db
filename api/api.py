@@ -8,7 +8,7 @@ from flask.ext.cache import Cache
 from flask_cors import CORS, cross_origin
 import os
 from .db import q, transaction_db, blockchain_db, meta_db, logs_db, address_db
-from .blockchain import storeBlockInDB, get_highest_node
+from .blockchain import storeBlockInDB, get_highest_node, log_event_worker
 from .util import ANS_ID, ANC_ID, calculate_bonus
 import random
 from werkzeug.contrib.cache import MemcachedCache
@@ -308,6 +308,12 @@ def get_claim(address):
         "total_claim": calculate_bonus(block_diffs),
         "total_unspent_claim": calculate_bonus(unspent_diffs),
         "claims": block_diffs})
+
+@api.route("/v2/log", methods=["POST"])
+def log_event():
+    data = request.get_json()
+    q.enqueue(log_event_worker, data)
+    return jsonify({"success":"True"})
 
 @api.route("/v2/version")
 def version():
