@@ -128,7 +128,7 @@ def storeLatestBlockInDB():
     storeBlockInDB(currBlock-1, nodeAPI)
 
 def log_event_worker(data):
-    if "type" in data and data["type"] in ["CLAIM", "SEND"]:
+    if "type" in data and data["type"] in ["CLAIM", "SEND", "LOGIN"]:
         blockchain_db["events"].insert_one(data)
 
 def update_sys_fees():
