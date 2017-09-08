@@ -70,6 +70,12 @@ def storeBlockInDB(block_index, nodeAPI=False):
         return True
     return False
 
+def convert_txid(txid):
+    if len(txid) == 66:
+        return txid[2:]
+    else:
+        return txid
+
 # store all the transactions in a block in the database
 # if the transactions already exist, they will be updated
 # if they don't exist, they will be replaced
@@ -79,6 +85,7 @@ def storeBlockTransactions(block):
     total_sys = 0.0
     total_net = 0.0
     for t in transactions:
+        t['txid'] = convert_txid(t['txid'])
         t['block_index'] = block["index"]
         t['sys_fee'] = float(t['sys_fee'])
         t['net_fee'] = float(t['net_fee'])
@@ -87,6 +94,7 @@ def storeBlockTransactions(block):
         if 'vin' in t: #t['type'] == 'ContractTransaction':
             input_transaction_data = []
             for vin in t['vin']:
+                vin['txid'] = convert_txid(vin['txid'])
                 try:
                     print("trying...")
                     lookup_t = blockchain_db['transactions'].find_one({"txid": vin['txid']})
@@ -103,6 +111,7 @@ def storeBlockTransactions(block):
             claim_transaction_data = []
             key_data = []
             for claim in t["claims"]:
+                claim['txid'] = convert_txid(claim['txid'])
                 print("claim", claim)
                 key_data.append({"key": "{}_{}".format(claim['txid'], claim['vout'])})
                 try:
