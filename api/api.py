@@ -49,19 +49,19 @@ def balance_for_transaction(address, tx):
     if "vin_verbose" in tx:
         for tx_info in tx['vin_verbose']:
             if tx_info['address'] == address:
-                if tx_info['asset'] == ANS_ID:
+                if tx_info['asset'] == ANS_ID or (tx_info['asset'] == "0x" + ANS_ID):
                     neo_out += int(tx_info['value'])
                     neo_sent = True
-                if tx_info['asset'] == ANC_ID:
+                if tx_info['asset'] == ANC_ID or (tx_info['asset'] == "0x" + ANC_ID):
                     gas_out += float(tx_info['value'])
                     gas_sent = True
     if "vout" in tx:
         for tx_info in tx['vout']:
             if tx_info['address'] == address:
-                if tx_info['asset'] == ANS_ID:
+                if tx_info['asset'] == ANS_ID or (tx_info['asset'] == "0x" + ANS_ID):
                     neo_in += int(tx_info['value'])
                     neo_sent = True
-                if tx_info['asset'] == ANC_ID:
+                if tx_info['asset'] == ANC_ID or (tx_info['asset'] == "0x" + ANC_ID):
                     gas_in += float(tx_info['value'])
                     gas_sent = True
     return {"txid": tx['txid'], "block_index":tx["block_index"],
