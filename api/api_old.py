@@ -49,19 +49,19 @@ def balance_for_transaction(address, tx):
     if "vin_verbose" in tx:
         for tx_info in tx['vin_verbose']:
             if tx_info['address'] == address:
-                if tx_info['asset'] == ANS_ID:
+                if tx_info['asset'] == ANS_ID or (tx_info['asset'] == "0x" + ANS_ID):
                     neo_out += int(tx_info['value'])
                     neo_sent = True
-                if tx_info['asset'] == ANC_ID:
+                if tx_info['asset'] == ANC_ID or (tx_info['asset'] == "0x" + ANC_ID):
                     gas_out += float(tx_info['value'])
                     gas_sent = True
     if "vout" in tx:
         for tx_info in tx['vout']:
             if tx_info['address'] == address:
-                if tx_info['asset'] == ANS_ID:
+                if tx_info['asset'] == ANS_ID or (tx_info['asset'] == "0x" + ANS_ID):
                     neo_in += int(tx_info['value'])
                     neo_sent = True
-                if tx_info['asset'] == ANC_ID:
+                if tx_info['asset'] == ANC_ID or (tx_info['asset'] == "0x" + ANC_ID):
                     gas_in += float(tx_info['value'])
                     gas_sent = True
     return {"txid": tx['txid'], "block_index":tx["block_index"],
@@ -78,9 +78,9 @@ def info_received_transaction(address, tx):
         return out
     for i,obj in enumerate(tx["vout"]):
         if obj["address"] == address:
-            if obj["asset"] == ANS_ID:
+            if obj["asset"] == ANS_ID or (obj["asset"] == "0x" + ANS_ID):
                 neo_tx.append({"value": int(obj["value"]), "index": obj["n"], "txid": tx["txid"]})
-            if obj["asset"] == ANC_ID:
+            if obj["asset"] == ANC_ID or (obj["asset"] == "0x" + ANC_ID):
                 gas_tx.append({"value": float(obj["value"]), "index": obj["n"], "txid": tx["txid"]})
     out["NEO"] = neo_tx
     out["GAS"] = gas_tx
@@ -93,9 +93,9 @@ def info_sent_transaction(address, tx):
         return out
     for i,obj in enumerate(tx["vin_verbose"]):
         if obj["address"] == address:
-            if obj["asset"] == ANS_ID:
+            if obj["asset"] == ANS_ID or (obj["asset"] == "0x" + ANS_ID):
                 neo_tx.append({"value": int(obj["value"]), "index": obj["n"], "txid": obj["txid"], "sending_id":tx["txid"]})
-            if obj["asset"] == ANC_ID:
+            if obj["asset"] == ANC_ID or (obj["asset"] == "0x" + ANC_ID):
                 gas_tx.append({"value": float(obj["value"]), "index": obj["n"], "txid": obj["txid"], "sending_id":tx["txid"]})
     out["NEO"] = neo_tx
     out["GAS"] = gas_tx
@@ -106,7 +106,7 @@ def amount_sent(address, asset_id, vout):
     total = 0
     for obj in vout:
         if obj["address"] == address and asset_id == obj["asset"]:
-            if asset_id == ANS_ID:
+            if asset_id == ANS_ID or (asset_id == "0x" + ANS_ID):
                 total += int(obj["value"])
             else:
                 total += float(obj["value"])
