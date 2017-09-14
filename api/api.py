@@ -152,7 +152,7 @@ def compute_sys_fee_diff(index1, index2):
     fees = [float(x["sys_fee"]) for x in transaction_db.find({ "$and":[
                 {"sys_fee": {"$gt": 0}},
                 {"block_index": {"$gte": index1}},
-                {"block_index": {"$lte": index2}} ]})]
+                {"block_index": {"$lt": index2}} ]})]
     total = int(sum(fees))
     return total
 
