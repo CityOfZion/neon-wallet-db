@@ -173,14 +173,14 @@ def sysfee(block_index):
 @api.route("/v2/address/history/<address>")
 @cache.cached(timeout=15)
 def balance_history(address):
-    transactions = transaction_db.find({"$or":[
-        {"vout":{"$elemMatch":{"address":address}}},
-        {"vin_verbose":{"$elemMatch":{"address":address}}}
-    ]}).sort("block_index", -1).limit(25)
+    # transactions = transaction_db.find({"$or":[
+    #     {"vout":{"$elemMatch":{"address":address}}},
+    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
+    # ]}).sort("block_index", -1).limit(25)
     transactions = db2json({ "net": NET,
                              "name":"transaction_history",
                              "address":address,
-                             "history": [balance_for_transaction(address, x) for x in transactions]})
+                             "history": [],#[balance_for_transaction(address, x) for x in transactions]})
     return jsonify(transactions)
 
 def get_db_height():
