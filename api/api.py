@@ -210,10 +210,10 @@ def collect_txids(txs):
 @api.route("/v2/address/balance/<address>")
 @cache.cached(timeout=15)
 def get_balance(address):
-    transactions = [t for t in transaction_db.find({"$or":[
-        {"vout":{"$elemMatch":{"address":address}}},
-        {"vin_verbose":{"$elemMatch":{"address":address}}}
-    ]})]
+    transactions = [] # [t for t in transaction_db.find({"$or":[
+    #     {"vout":{"$elemMatch":{"address":address}}},
+    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
+    # ]})]
     info_sent = [info_sent_transaction(address, t) for t in transactions]
     info_received = [info_received_transaction(address, t) for t in transactions]
     sent = collect_txids(info_sent)
