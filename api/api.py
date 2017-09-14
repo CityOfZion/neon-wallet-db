@@ -220,12 +220,6 @@ def get_balance(address):
     received = collect_txids(info_received)
     unspent = {k:{k_:v_ for k_,v_ in received[k].items() if (not k_ in sent[k])} for k in ["NEO", "GAS"]}
     totals = {k:sum([v_["value"] for k_,v_ in unspent[k].items()]) for k in ["NEO", "GAS"]}
-    if random.randint(1,10) == 1:
-        logs_db.update_one({"address": address}, {"$set": {
-            "address": address,
-            "NEO": totals["NEO"],
-            "GAS": totals["GAS"]
-        }}, upsert=True)
     return jsonify({
         "net": NET,
         "address": address,
