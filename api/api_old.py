@@ -173,10 +173,10 @@ def sysfee_v1(block_index):
 @api_old.route("/v1/address/history/<address>")
 @cache.cached(timeout=15)
 def balance_history_v1(address):
-    transactions = transaction_db.find({"$or":[
-        {"vout":{"$elemMatch":{"address":address}}},
-        {"vin_verbose":{"$elemMatch":{"address":address}}}
-    ]}).sort("block_index", -1).limit(25)
+    transactions =  [] # transaction_db.find({"$or":[
+    #     {"vout":{"$elemMatch":{"address":address}}},
+    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
+    # ]}).sort("block_index", -1).limit(25)
     transactions = db2json({ "net": NET,
                              "name":"transaction_history",
                              "address":address,
