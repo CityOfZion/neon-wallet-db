@@ -12,7 +12,7 @@ This API and a MongoDB mirror of the Neo blockchain live on Heroku. The public A
 
 ## Overview of API
 
-All APIs work on both MainNet (https://testnet-api.neonwallet.com) and TestNet (https://api.neonwallet.com).
+All APIs work on both MainNet (https://api.neonwallet.com) and TestNet (https://testnet-api.neonwallet.com).
 
 ### Balance data
 
