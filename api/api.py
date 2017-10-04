@@ -210,23 +210,23 @@ def collect_txids(txs):
 @api.route("/v2/address/balance/<address>")
 @cache.cached(timeout=15)
 def get_balance(address):
-    # transactions = [t for t in transaction_db.find({"$or":[
-    #     {"vout":{"$elemMatch":{"address":address}}},
-    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
-    # ]})]
-    # info_sent = [info_sent_transaction(address, t) for t in transactions]
-    # info_received = [info_received_transaction(address, t) for t in transactions]
-    # sent = collect_txids(info_sent)
-    # received = collect_txids(info_received)
-    # unspent = {k:{k_:v_ for k_,v_ in received[k].items() if (not k_ in sent[k])} for k in ["NEO", "GAS"]}
-    # totals = {k:sum([v_["value"] for k_,v_ in unspent[k].items()]) for k in ["NEO", "GAS"]}
+    transactions = [t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})]
+    info_sent = [info_sent_transaction(address, t) for t in transactions]
+    info_received = [info_received_transaction(address, t) for t in transactions]
+    sent = collect_txids(info_sent)
+    received = collect_txids(info_received)
+    unspent = {k:{k_:v_ for k_,v_ in received[k].items() if (not k_ in sent[k])} for k in ["NEO", "GAS"]}
+    totals = {k:sum([v_["value"] for k_,v_ in unspent[k].items()]) for k in ["NEO", "GAS"]}
     return jsonify({
         "net": NET,
         "address": address,
-        "NEO": {"balance": 0, # totals["NEO"],
-                "unspent": []}, #[v for k,v in unspent["NEO"].items()]},
-        "GAS": { "balance": 0, #totals["GAS"],
-                "unspent": []}}) #[v for k,v in unspent["GAS"].items()] }})
+        "NEO": {"balance": totals["NEO"],
+                "unspent": [v for k,v in unspent["NEO"].items()]},
+        "GAS": { "balance": totals["GAS"],
+                "unspent": [v for k,v in unspent["GAS"].items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
