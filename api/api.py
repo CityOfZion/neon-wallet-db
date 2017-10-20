@@ -8,7 +8,7 @@ from flask.ext.cache import Cache
 from flask_cors import CORS, cross_origin
 import os
 from .db import q, transaction_db, blockchain_db, meta_db, logs_db, address_db
-from .blockchain import storeBlockInDB, get_highest_node, log_event_worker
+from .blockchain import storeBlockInDB, get_highest_node, log_event_worker, convert_txid
 from .util import ANS_ID, ANC_ID, calculate_bonus
 import random
 from werkzeug.contrib.cache import MemcachedCache
@@ -31,7 +31,7 @@ def get_vin_txids(txs):
     for tx in txs:
         for tx_sent in tx["vin_verbose"]:
             asset_symbol = symbol_dict[tx_sent["asset"]]
-            spent_ids[asset_symbol][(tx_sent["txid"], tx_sent["n"])] = tx
+            spent_ids[asset_symbol][(convert_txid(tx_sent["txid"]), tx_sent["n"])] = tx
     return spent_ids
 
 # return a dictionary of claimed (txids, vout) => transaction when claimed
@@ -39,7 +39,7 @@ def get_claimed_txids(txs):
     claimed_ids = {}
     for tx in txs:
         for tx_claimed in tx["claims"]:
-            claimed_ids[(tx_claimed["txid"], tx_claimed['vout'])] = tx
+            claimed_ids[(convert_txid(tx_claimed["txid"]), tx_claimed['vout'])] = tx
     return claimed_ids
 
 def balance_for_transaction(address, tx):
@@ -64,7 +64,7 @@ def balance_for_transaction(address, tx):
                 if tx_info['asset'] == ANC_ID or (tx_info['asset'] == "0x" + ANC_ID):
                     gas_in += float(tx_info['value'])
                     gas_sent = True
-    return {"txid": tx['txid'], "block_index":tx["block_index"],
+    return {"txid": convert_txid(tx['txid']), "block_index":tx["block_index"],
         "NEO": neo_in - neo_out,
         "GAS": gas_in - gas_out,
         "neo_sent": neo_sent,
@@ -79,9 +79,9 @@ def info_received_transaction(address, tx):
     for i,obj in enumerate(tx["vout"]):
         if obj["address"] == address:
             if obj["asset"] == ANS_ID or (obj["asset"] == "0x" + ANS_ID):
-                neo_tx.append({"value": int(obj["value"]), "index": obj["n"], "txid": tx["txid"]})
+                neo_tx.append({"value": int(obj["value"]), "index": obj["n"], "txid": convert_txid(tx["txid"])})
             if obj["asset"] == ANC_ID or (obj["asset"] == "0x" + ANC_ID):
-                gas_tx.append({"value": float(obj["value"]), "index": obj["n"], "txid": tx["txid"]})
+                gas_tx.append({"value": float(obj["value"]), "index": obj["n"], "txid": convert_txid(tx["txid"])})
     out["NEO"] = neo_tx
     out["GAS"] = gas_tx
     return out
@@ -94,9 +94,9 @@ def info_sent_transaction(address, tx):
     for i,obj in enumerate(tx["vin_verbose"]):
         if obj["address"] == address:
             if obj["asset"] == ANS_ID or (obj["asset"] == "0x" + ANS_ID):
-                neo_tx.append({"value": int(obj["value"]), "index": obj["n"], "txid": obj["txid"], "sending_id":tx["txid"]})
+                neo_tx.append({"value": int(obj["value"]), "index": obj["n"], "txid": convert_txid(obj["txid"]), "sending_id":convert_txid(tx["txid"])})
             if obj["asset"] == ANC_ID or (obj["asset"] == "0x" + ANC_ID):
-                gas_tx.append({"value": float(obj["value"]), "index": obj["n"], "txid": obj["txid"], "sending_id":tx["txid"]})
+                gas_tx.append({"value": float(obj["value"]), "index": obj["n"], "txid": convert_txid(obj["txid"]), "sending_id":convert_txid(tx["txid"])})
     out["NEO"] = neo_tx
     out["GAS"] = gas_tx
     return out
@@ -119,7 +119,7 @@ def get_past_claims(address):
         {"vout":{"$elemMatch":{"address":address}}}]})]
 
 def is_valid_claim(tx, address, spent_ids, claim_ids):
-    return tx['txid'] in spent_ids and not tx['txid'] in claim_ids and len(info_received_transaction(address, tx)["NEO"]) > 0
+    return convert_txid(tx['txid']) in spent_ids and not convert_txid(tx['txid']) in claim_ids and len(info_received_transaction(address, tx)["NEO"]) > 0
 
 # return node status
 @api.route("/v2/network/nodes")
@@ -196,14 +196,14 @@ def block_height():
 @api.route("/v2/transaction/<txid>")
 @cache.cached(timeout=500)
 def get_transaction(txid):
-    return jsonify({**db2json(transaction_db.find_one({"txid": txid})), "net": NET} )
+    return jsonify({**db2json(transaction_db.find_one({"txid": convert_txid(txid)})), "net": NET} )
 
 def collect_txids(txs):
     store = {"NEO": {}, "GAS": {}}
     for tx in txs:
         for k in ["NEO", "GAS"]:
             for tx_ in tx[k]:
-                store[k][(tx_["txid"], tx_["index"])] = tx_
+                store[k][(convert_txid(tx_["txid"]), tx_["index"])] = tx_
     return store
 
 # get balance and unspent assets
@@ -241,8 +241,8 @@ def filter_claimed_for_other_address(claims):
 def compute_claims(claims, transactions, end_block=False):
     block_diffs = []
     for tx in claims:
-        obj = {"txid": tx["txid"]}
-        obj["start"] = transactions[tx['txid']]["block_index"]
+        obj = {"txid": convert_txid(tx["txid"])}
+        obj["start"] = transactions[convert_txid(tx['txid'])]["block_index"]
         obj["value"] = tx["value"]
         obj["index"] = tx["index"]
         if not end_block:
@@ -259,7 +259,7 @@ def get_address_txs(address):
     if query:
         return query["txs"]
     else:
-        transactions = {t['txid']:t for t in transaction_db.find({"$or":[
+        transactions = {convert_txid(t['txid']):t for t in transaction_db.find({"$or":[
             {"vout":{"$elemMatch":{"address":address}}},
             {"vin_verbose":{"$elemMatch":{"address":address}}}
         ]})}
@@ -271,7 +271,7 @@ def get_address_txs(address):
 @cache.cached(timeout=15)
 def get_claim(address):
     start = time.time()
-    transactions = {t['txid']:t for t in transaction_db.find({"$or":[
+    transactions = {convert_txid(t['txid']):t for t in transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
     ]})}
