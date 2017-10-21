@@ -12,7 +12,7 @@ This API and a MongoDB mirror of the Neo blockchain live on Heroku. The public A
 
 ## Overview of API
 
-All APIs work on both MainNet (https://testnet-api.neonwallet.com) and TestNet (https://api.neonwallet.com).
+All APIs work on both MainNet (https://api.neonwallet.com) and TestNet (https://testnet-api.neonwallet.com).
 
 ### Balance data
 
@@ -20,7 +20,7 @@ Given an address, return the current balance of NEO and GAS, as well as a list o
 
 For example:
 
-    curl http://testnet-api.neonwallet.com/v1/address/balance/ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E
+    curl http://testnet-api.neonwallet.com/v2/address/balance/ANrL4vPnQCCi5Mro4fqKK1rxrkxEHqmp2E
 
 This will produce:
 
@@ -74,7 +74,7 @@ Get a record of how an account balance has changed over time across all transact
 
 For example:
 
-    curl http://testnet-api.neonwallet.com/v1/address/history/ALpwWoxKLwbfCTkRpK2iXrXpaMHgWGcrDV
+    curl http://testnet-api.neonwallet.com/v2/address/history/ALpwWoxKLwbfCTkRpK2iXrXpaMHgWGcrDV
 
 This produces:
 
@@ -130,7 +130,7 @@ Get detailed information about a transaction: `http://api.neonwallet.com/v1/tran
 
 For example:
 
-    curl http://testnet-api.neonwallet.com/v1/transaction/ec4dc0092d5adf8cdf30eadf5116dbb6f138b2e35ca2f1a26d992d69388e0b95
+    curl http://testnet-api.neonwallet.com/v2/transaction/ec4dc0092d5adf8cdf30eadf5116dbb6f138b2e35ca2f1a26d992d69388e0b95
 
 This produces:
 
