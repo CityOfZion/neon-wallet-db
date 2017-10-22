@@ -226,7 +226,7 @@ def get_balance(address):
         "NEO": {"balance": 0, # totals["NEO"],
                 "unspent": []}, #[v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": 0, # totals["GAS"],
-                "unspent": []}) #[v for k,v in unspent["GAS"].items()] }})
+                "unspent": []}}) #[v for k,v in unspent["GAS"].items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
