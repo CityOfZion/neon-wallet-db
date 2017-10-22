@@ -189,8 +189,8 @@ def get_db_height():
 # get current block height
 @api_old.route("/v1/block/height")
 def block_height_v1():
-    height = get_db_height()
-    return jsonify({"net": NET, "block_height": height})
+    # height = get_db_height()
+    return jsonify({"net": NET, "block_height": 0})
 
 # get transaction data from the DB
 @api_old.route("/v1/transaction/<txid>")
