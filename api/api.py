@@ -210,23 +210,23 @@ def collect_txids(txs):
 @api.route("/v2/address/balance/<address>")
 @cache.cached(timeout=15)
 def get_balance(address):
-    # transactions = [t for t in transaction_db.find({"$or":[
-    #     {"vout":{"$elemMatch":{"address":address}}},
-    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
-    # ]})]
-    # info_sent = [info_sent_transaction(address, t) for t in transactions]
-    # info_received = [info_received_transaction(address, t) for t in transactions]
-    # sent = collect_txids(info_sent)
-    # received = collect_txids(info_received)
-    # unspent = {k:{k_:v_ for k_,v_ in received[k].items() if (not k_ in sent[k])} for k in ["NEO", "GAS"]}
-    # totals = {k:sum([v_["value"] for k_,v_ in unspent[k].items()]) for k in ["NEO", "GAS"]}
+    transactions = [t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})]
+    info_sent = [info_sent_transaction(address, t) for t in transactions]
+    info_received = [info_received_transaction(address, t) for t in transactions]
+    sent = collect_txids(info_sent)
+    received = collect_txids(info_received)
+    unspent = {k:{k_:v_ for k_,v_ in received[k].items() if (not k_ in sent[k])} for k in ["NEO", "GAS"]}
+    totals = {k:sum([v_["value"] for k_,v_ in unspent[k].items()]) for k in ["NEO", "GAS"]}
     return jsonify({
         "net": NET,
         "address": address,
         "NEO": {"balance": 0, #totals["NEO"],
-                "unspent": [] },#[v for k,v in unspent["NEO"].items()]},
-        "GAS": { "balance": 0, #totals["GAS"],
-                "unspent": [] }}) #[v for k,v in unspent["GAS"].items()] }})
+                "unspent": [v for k,v in unspent["NEO"].items()]},
+        "GAS": { "balance": totals["GAS"],
+                "unspent": [v for k,v in unspent["GAS"].items()] }})
 
 def filter_claimed_for_other_address(claims):
     out_claims = []
@@ -270,38 +270,38 @@ def get_address_txs(address):
 @api.route("/v2/address/claims/<address>")
 @cache.cached(timeout=15)
 def get_claim(address):
-    # start = time.time()
-    # transactions = {convert_txid(t['txid']):t for t in transaction_db.find({"$or":[
-    #     {"vout":{"$elemMatch":{"address":address}}},
-    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
-    # ]})}
-    # print("to get transactions {}".format(time.time() - start))
-    # # get sent neo info
-    # info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
-    # sent_neo = collect_txids(info_sent)["NEO"]
-    # # get received neo info
-    # info_received = [info_received_transaction(address, t) for t in transactions.values()]
-    # received_neo = collect_txids(info_received)["NEO"]
-    # unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
-    # # # get claim info
-    # past_claims = get_past_claims(address)
-    # claimed_neo = get_claimed_txids(past_claims)
-    # valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
-    # valid_claims = filter_claimed_for_other_address(valid_claims)
-    # block_diffs = compute_claims(valid_claims, transactions)
-    # total = sum([x["claim"] for x in block_diffs])
-    # # now do for unspent
-    # height = get_db_height()
-    # start = time.time()
-    # unspent_diffs = compute_claims([v for k,v in unspent_neo.items()], transactions, height)
-    # print("to compute claims: {}".format(time.time() - start))
-    # unspent_claim_total = sum([x["claim"] for x in block_diffs])
+    start = time.time()
+    transactions = {convert_txid(t['txid']):t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})}
+    print("to get transactions {}".format(time.time() - start))
+    # get sent neo info
+    info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
+    sent_neo = collect_txids(info_sent)["NEO"]
+    # get received neo info
+    info_received = [info_received_transaction(address, t) for t in transactions.values()]
+    received_neo = collect_txids(info_received)["NEO"]
+    unspent_neo = {k:v for k,v in received_neo.items() if not k in sent_neo}
+    # # get claim info
+    past_claims = get_past_claims(address)
+    claimed_neo = get_claimed_txids(past_claims)
+    valid_claims = {k:v for k,v in sent_neo.items() if not k in claimed_neo}
+    valid_claims = filter_claimed_for_other_address(valid_claims)
+    block_diffs = compute_claims(valid_claims, transactions)
+    total = sum([x["claim"] for x in block_diffs])
+    # now do for unspent
+    height = get_db_height()
+    start = time.time()
+    unspent_diffs = compute_claims([v for k,v in unspent_neo.items()], transactions, height)
+    print("to compute claims: {}".format(time.time() - start))
+    unspent_claim_total = sum([x["claim"] for x in block_diffs])
     return jsonify({
         "net": NET,
         "address": address,
-        "total_claim": 0, #calculate_bonus(block_diffs),
-        "total_unspent_claim": 0, # calculate_bonus(unspent_diffs),
-        "claims": []}) #block_diffs})
+        "total_claim": calculate_bonus(block_diffs),
+        "total_unspent_claim": calculate_bonus(unspent_diffs),
+        "claims": block_diffs})
 
 @api.route("/v2/log", methods=["POST"])
 def log_event():
