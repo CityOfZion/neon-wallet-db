@@ -176,7 +176,7 @@ def balance_history(address):
     transactions = transaction_db.find({"$or":[
         {"vout":{"$elemMatch":{"address":address}}},
         {"vin_verbose":{"$elemMatch":{"address":address}}}
-    ]}).sort("block_index", -1).limit(20)
+    ]}).sort("block_index", -1).limit(10)
     transactions = db2json({ "net": NET,
                              "name":"transaction_history",
                              "address":address,
@@ -223,7 +223,7 @@ def get_balance(address):
     return jsonify({
         "net": NET,
         "address": address,
-        "NEO": {"balance": 0, #totals["NEO"],
+        "NEO": {"balance": totals["NEO"],
                 "unspent": [v for k,v in unspent["NEO"].items()]},
         "GAS": { "balance": totals["GAS"],
                 "unspent": [v for k,v in unspent["GAS"].items()] }})
