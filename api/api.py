@@ -180,7 +180,7 @@ def balance_history(address):
     transactions = db2json({ "net": NET,
                              "name":"transaction_history",
                              "address":address,
-                             "history": [] }) #[balance_for_transaction(address, x) for x in transactions]})
+                             "history": [balance_for_transaction(address, x) for x in transactions]})
     return jsonify(transactions)
 
 def get_db_height():
