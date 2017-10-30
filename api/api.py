@@ -181,7 +181,7 @@ def balance_history(address):
         if not t["txid"] in hash:
             transactions.append(t)
             hash[t["txid"]] = True
-    transactions = sorted(transactions, key=lambda x: x["txid"])
+    transactions = sorted(transactions, key=lambda x: x["block_index"], reverse=True)
     transactions = db2json({ "net": NET,
                              "name":"transaction_history",
                              "address":address,
