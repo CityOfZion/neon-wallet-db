@@ -173,15 +173,19 @@ def sysfee(block_index):
 @api.route("/v2/address/history/<address>")
 @cache.cached(timeout=15)
 def balance_history(address):
-    ins = [t for t in transaction_db.find({"vin_verbose":{"$elemMatch":{"address":address}}}).sort("block_index",-1).limit(20)]
-    outs = [t for t in transaction_db.find({"vout":{"$elemMatch":{"address":address}}}).sort("block_index",-1).limit(20)]
-    transactions = []
-    hash = {}
-    for t in ins + outs:
-        if not t["txid"] in hash:
-            transactions.append(t)
-            hash[t["txid"]] = True
-    transactions = sorted(transactions, key=lambda x: x["block_index"], reverse=True)
+    # ins = [t for t in transaction_db.find({"vin_verbose":{"$elemMatch":{"address":address}}}).sort("block_index",-1).limit(20)]
+    # outs = [t for t in transaction_db.find({"vout":{"$elemMatch":{"address":address}}}).sort("block_index",-1).limit(20)]
+    # transactions = []
+    # hash = {}
+    # for t in ins + outs:
+    #     if not t["txid"] in hash:
+    #         transactions.append(t)
+    #         hash[t["txid"]] = True
+    # transactions = sorted(transactions, key=lambda x: x["block_index"], reverse=True)
+    transactions = [t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]}).sort("block_index",-1).limit(20)]
     transactions = db2json({ "net": NET,
                              "name":"transaction_history",
                              "address":address,
@@ -276,18 +280,18 @@ def get_address_txs(address):
 @cache.cached(timeout=15)
 def get_claim(address):
     start = time.time()
-    # transactions = {convert_txid(t['txid']):t for t in transaction_db.find({"$or":[
-    #     {"vout":{"$elemMatch":{"address":address}}},
-    #     {"vin_verbose":{"$elemMatch":{"address":address}}}
-    # ]})}
-    ins = [t for t in transaction_db.find({"vin_verbose.address":address})]
-    outs = [t for t in transaction_db.find({"vout.address":address})]
-    transactions = {}
-    for t in ins + outs:
-        c_id = convert_txid(t["txid"])
-        if not c_id in transactions:
-            transactions[c_id] = t
-    print("to get transactions {}".format(time.time() - start))
+    transactions = {convert_txid(t['txid']):t for t in transaction_db.find({"$or":[
+        {"vout":{"$elemMatch":{"address":address}}},
+        {"vin_verbose":{"$elemMatch":{"address":address}}}
+    ]})}
+    # ins = [t for t in transaction_db.find({"vin_verbose.address":address})]
+    # outs = [t for t in transaction_db.find({"vout.address":address})]
+    # transactions = {}
+    # for t in ins + outs:
+    #     c_id = convert_txid(t["txid"])
+    #     if not c_id in transactions:
+    #         transactions[c_id] = t
+    # print("to get transactions {}".format(time.time() - start))
     # get sent neo info
     info_sent = [info_sent_transaction(address, t) for t in transactions.values()]
     sent_neo = collect_txids(info_sent)["NEO"]
