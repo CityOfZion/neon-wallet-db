@@ -21,12 +21,12 @@ The application also requires a number of environment variables:
 
 To install the libraries run
 
-    `pip install -r requirements.txt`
+    pip install -r requirements.txt
 
 If you have installed the heroku toolkit you can run:
 
-    `heroku local:web # start web server`
+    heroku local:web # start web server
 
 Or:
 
-    `heroku local # start all processes`
+    heroku local # start all processes
