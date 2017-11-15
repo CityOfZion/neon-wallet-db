@@ -310,4 +310,4 @@ def log_event():
 
 @api.route("/v2/version")
 def version():
-    return jsonify({"version":"0.0.5"})
+    return jsonify({"version":"0.0.7"})
